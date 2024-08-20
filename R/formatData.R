@@ -17,7 +17,7 @@ formatData <- function(inData,
   # check that every year has data
   yrs <- min(inData$year):max(inData$year)
   if(any(!yrs %in% inData$year)){
-    missingYear <- setdiff(1:attr(inData, "years"), inData$year)
+    missingYear <- setdiff(yrs, inData$year)
     stop(paste0(missingYear, " has no records in the input data"))
   }
 

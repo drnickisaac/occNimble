@@ -17,9 +17,9 @@ defineModel_SS <- function(inclPhenology = TRUE,
     for(j in 1:nsite){
         for(t in 1:nyear){
           if(inclStateRE){ # currently only estimates linear trend
-            psi[j,t] <- lam.0 + Trend * (t-1) + eta[j]
+            logit(psi[j,t]) <- lam.0 + Trend * (t-1) + eta[j]
           } else {
-            psi[j,t] <- lam.0 + Trend * (t-1)
+            logit(psi[j,t]) <- lam.0 + Trend * (t-1)
           }
           z[j,t] ~ dbern(psi[j,t]) # True occupancy status
     }}

@@ -16,7 +16,6 @@
 #' @param n.chain number of MCMC chains. Defaults to 3
 #' @param maxSp maximum number of species to be modelled
 #' @return a set of year effects
-#' @export
 #' @import nimble
 #' @import pbmcapply
 #' @import parallel
@@ -24,7 +23,7 @@
 #' @import reshape2
 #' @import lme4
 
-#' #' @examples
+#' @examples
 #' \dontrun{
 #'
 #' set.seed(123)
@@ -59,15 +58,16 @@
 #' # prepare the data for the model (includes removing species found on few sites)
 #' formattedData <- formatData(inData)
 #'
-#' # run the model with these data for one species (very small number of iterations)
-#' results <- runModel(taxa_name = taxa[1],
-#'                       n_iterations = 50,
-#'                       burnin = 15,
-#'                       occDetdata = visitData$occDetdata,
-#'                       spp_vis = visitData$spp_vis,
-#'                       write_results = FALSE,
-#'                       provenance  = "sparta test dataset")
+#' # Summarise the data
+#' dataSumm <- with(formattedData, summariseData(obsData, dataConstants))
+#'
+#' # run the model with these data for the first three species in the dataset
+#' results <- runModel(formattedData$dataConstants,
+#'                    formattedData$obsData,
+#'                    dataSumm,
+#'                    maxSp = 3)
 #' }
+#' @export
 #'
 ###############################################################
 
@@ -75,7 +75,7 @@ runModel <- function(dataConstants,
                      obsData,
                      dataSumm,
                      useNimble = TRUE,
-                     inclPhenology = TRUE,
+                     inclPhenology = FALSE,
                      inclStateRE = FALSE,
                      multiSp = FALSE,
                      parallelize = FALSE,
@@ -110,18 +110,19 @@ runModel <- function(dataConstants,
   if(useNimble) {
     if(is.null(n.burn)) n.burn = n.iter/2
 
-    if(multiSp == TRUE){ # Multispecies option
+    if(multiSp == TRUE){ # Multispecies option - not edited for simple occupancy
 
       # step 1 define the model code
       modelcode <- defineModel_MS(inclPhenology = inclPhenology,
                                   inclStateRE = inclStateRE)
 
       init.vals <- list(z = dataSumm$occMatrix,
-                        lam.0 = cloglog(dataSumm$stats$naiveOcc),
+                        lam.0 = logit(dataSumm$stats$naiveOcc),
                         gamma.0 = rep(ilogit(0.2), times=maxSp),
                         Trend = rnorm(n=1),
                         spTr = rnorm(n=maxSp),
-                        tau.trend = 1)
+                        tau.trend = 1,
+                        alpha.0 = 0)
       if(inclPhenology){
         init.vals$beta1 <- rep(180, times=maxSp)
         init.vals$beta2 <- rep(50, times=maxSp)
@@ -138,9 +139,9 @@ runModel <- function(dataConstants,
                            data = obsData,
                            inits = init.vals)
 
-      params <- c("mu.lambda","Trend")
+      params <- c("Trend")
       if(allPars) {
-        params <- c(params, 'lam.0','gamma.0', 'psi.fs', 'tau.trend')
+        params <- c(params, "alpha.0", 'lam.0','gamma.0', 'psi.fs', 'tau.trend')
         if(inclPhenology) params <- c(params, "beta1", "beta2", 'gamma.1')
         if(inclStateRE) params <- c(params, "sd.eta")
       }
@@ -186,11 +187,11 @@ runModel <- function(dataConstants,
       # step 1 define the model code
       modelcode <- defineModel_SS(inclPhenology = inclPhenology,
                                   inclStateRE = inclStateRE)
-
       init.vals <- list(z = dataSumm$occMatrix[1,,], # value for species 1
                         lam.0 = ilogit(dataSumm$stats$naiveOcc)[1], # value for species 1
                         gamma.0 = ilogit(0.2),
-                        Trend = rnorm(n=1))
+                        Trend = rnorm(n=1),
+                        alpha.0 = 0)
 
       if(inclPhenology){
         init.vals$beta1 <- 180
@@ -209,9 +210,9 @@ runModel <- function(dataConstants,
                            inits = init.vals)
 
       # step 3 build an MCMC object using buildMCMC(). we can add some customization here
-      params <- c("mu.lambda","Trend")
+      params <- c("Trend")
       if(allPars) {
-        params <- c(params, 'lam.0','gamma.0', 'psi.fs')
+        params <- c(params, 'lam.0','gamma.0', 'psi.fs', "alpha.0")
         if(inclPhenology) params <- c(params, "beta1", "beta2", 'gamma.1', "alpha.1")
         if(inclStateRE) params <- c(params, "sd.eta")
       }
@@ -220,12 +221,12 @@ runModel <- function(dataConstants,
                            monitors = params,
                            useConjugacy = FALSE) # useConjugacy controls whether conjugate samplers are assigned when possible
 
-      # step 3 before compiling the MCMC object we need to compile the model first
+      # step 4 before compiling the MCMC object we need to compile the model first
       Cmodel <- compileNimble(model)
 
       # now the MCMC (project = NIMBLE model already associated with a project)
       CoccMCMC <- compileNimble(occMCMC, project = model)
-
+  print("step 5 complete")
       ####################################################################################
 
       single_species_model <- function(sp, spDat, dataSumm,
@@ -236,22 +237,23 @@ runModel <- function(dataConstants,
         Z <- dataSumm$occMatrix[sp,,]
 
         # write an informative message about this species' data
-        nS <- sum(rowSums(Z>0, na.rm=T)>0)
-        spName <- dataSumm$stats$species
-        print(paste0("Now running ", spName[sp], ", which is present on ", nS, " sites"))
+        nS <- sum(rowSums(Z, na.rm=T)>0)
+        spName <- dataSumm$stats$species[sp]
+        print(paste0("Now running ", spName, ", which is present on ", nS, " sites"))
 
         # add the data for the species of interest
         Cmodel$setData(spDat)
 
         # finish initialization
         spInits <- list(z = Z,
-                        lam.0 = cloglog(dataSumm$stats$naiveOcc)[sp])
-        if(inclPanTrap) spInits$alpha.0 = ilogit(dataSumm$stats$reportingRate_z1[sp]) # replace with reportingRate_1 when I can calculate it
+                        lam.0 = logit(dataSumm$stats$naiveOcc)[sp] * .999) # to avoid numeric problem
         Cmodel$setInits(spInits)
 
         # test whether the model is fully initialised
-        if(is.na(Cmodel$calculate())) {stop("model not fully initialized")}
-        Cmodel$initializeInfo()
+        if(is.na(Cmodel$calculate())) {
+          print(Cmodel$initializeInfo())
+          stop("model not fully initialized")
+          }
 
         # and now we can use $run on the compiled model object.
         samplesList <- list()
@@ -273,9 +275,9 @@ runModel <- function(dataConstants,
       if(parallelize){
         #av_cores <- parallel::detectCores() - 1
         yearEff <- pbmcapply::pbmclapply(1:maxSp, function(i){
-          single_species_model(sp=i,
-                               spDat=lapply(obsData, function(x) x[i,]),
-                               dataSumm=dataSumm,
+          single_species_model(sp = i,
+                               spDat = lapply(obsData, function(x) x[i,]),
+                               dataSumm = dataSumm,
                                n.iter = n.iter,
                                n.burn = n.burn,
                                n.thin = n.thin,
@@ -286,8 +288,8 @@ runModel <- function(dataConstants,
         )
       } else {
         yearEff <- lapply(1:maxSp, function(i){
-          single_species_model(sp=i,
-                               spDat=lapply(obsData, function(x) x[i,]),
+          single_species_model(sp = i,
+                               spDat = lapply(obsData, function(x) x[i,]),
                                dataSumm = dataSumm,
                                n.iter = n.iter,
                                n.burn = n.burn,
