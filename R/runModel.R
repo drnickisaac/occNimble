@@ -203,7 +203,7 @@ runModel <- function(dataConstants,
       print("initial values set")
 
       # step 2 create an operational from from NIMBLE/BUGS code
-      model <- nimbleModel(code = modelcode,
+      model <- nimble::nimbleModel(code = modelcode,
                            constants = dataConstants[!names(dataConstants) %in% "nsp"],
                            data = lapply(obsData, function(x) x[1,]), # values for species 1
                            inits = init.vals)
