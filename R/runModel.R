@@ -118,7 +118,6 @@ runModel <- function(dataConstants,
 
       init.vals <- list(z = dataSumm$occMatrix,
                         lam.0 = logit(dataSumm$stats$naiveOcc),
-                        gamma.0 = rep(ilogit(0.2), times=maxSp),
                         Trend = rnorm(n=1),
                         spTr = rnorm(n=maxSp),
                         tau.trend = 1,
@@ -126,7 +125,6 @@ runModel <- function(dataConstants,
       if(inclPhenology){
         init.vals$beta1 <- rep(180, times=maxSp)
         init.vals$beta2 <- rep(50, times=maxSp)
-        init.vals$gamma.1 <- rep(1, times=maxSp)
       }
       if(inclStateRE){
         init.vals$sd.eta <- 2
@@ -141,8 +139,8 @@ runModel <- function(dataConstants,
 
       params <- c("Trend")
       if(allPars) {
-        params <- c(params, "alpha.0", 'lam.0','gamma.0', 'psi.fs', 'tau.trend')
-        if(inclPhenology) params <- c(params, "beta1", "beta2", 'gamma.1')
+        params <- c(params, "alpha.0", 'lam.0', 'psi.fs', 'tau.trend')
+        if(inclPhenology) params <- c(params, "beta1", "beta2")
         if(inclStateRE) params <- c(params, "sd.eta")
       }
 
@@ -190,15 +188,13 @@ runModel <- function(dataConstants,
       #print("model definition read in")
 
       init.vals <- list(z = dataSumm$occMatrix[1,,], # value for species 1
-                        lam.0 = ilogit(dataSumm$stats$naiveOcc)[1], # value for species 1
-                        gamma.0 = ilogit(0.2),
+                        lam.0 = logit(dataSumm$stats$naiveOcc)[1], # value for species 1
                         Trend = rnorm(n=1),
                         alpha.0 = 0)
 
       if(inclPhenology){
         init.vals$beta1 <- 180
         init.vals$beta2 <- 50
-        init.vals$gamma.1 <- 1
       }
       if(inclStateRE){
         init.vals$sd.eta <- 2
@@ -216,8 +212,8 @@ runModel <- function(dataConstants,
       # step 3 build an MCMC object using buildMCMC(). we can add some customization here
       params <- c("Trend")
       if(allPars) {
-        params <- c(params, 'lam.0','gamma.0', 'psi.fs', "alpha.0")
-        if(inclPhenology) params <- c(params, "beta1", "beta2", 'gamma.1', "alpha.1")
+        params <- c(params, 'lam.0', 'psi.fs', "alpha.0")
+        if(inclPhenology) params <- c(params, "beta1", "beta2", "alpha.1")
         if(inclStateRE) params <- c(params, "sd.eta")
       }
       occMCMC <- buildMCMC(model,
