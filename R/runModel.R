@@ -187,6 +187,8 @@ runModel <- function(dataConstants,
       # step 1 define the model code
       modelcode <- defineModel_SS(inclPhenology = inclPhenology,
                                   inclStateRE = inclStateRE)
+      #print("model definition read in")
+
       init.vals <- list(z = dataSumm$occMatrix[1,,], # value for species 1
                         lam.0 = ilogit(dataSumm$stats$naiveOcc)[1], # value for species 1
                         gamma.0 = ilogit(0.2),
@@ -202,12 +204,14 @@ runModel <- function(dataConstants,
         init.vals$sd.eta <- 2
         init.vals$eta <- rnorm(n=dataConstants$nsite, mean=0, sd=2)
       }
+      print("initial values set")
 
       # step 2 create an operational from from NIMBLE/BUGS code
       model <- nimbleModel(code = modelcode,
                            constants = dataConstants[!names(dataConstants) %in% "nsp"],
                            data = lapply(obsData, function(x) x[1,]), # values for species 1
                            inits = init.vals)
+      print("step 2 complete")
 
       # step 3 build an MCMC object using buildMCMC(). we can add some customization here
       params <- c("Trend")
@@ -216,17 +220,18 @@ runModel <- function(dataConstants,
         if(inclPhenology) params <- c(params, "beta1", "beta2", 'gamma.1', "alpha.1")
         if(inclStateRE) params <- c(params, "sd.eta")
       }
-
       occMCMC <- buildMCMC(model,
                            monitors = params,
                            useConjugacy = FALSE) # useConjugacy controls whether conjugate samplers are assigned when possible
+      print("model build complete")
 
       # step 4 before compiling the MCMC object we need to compile the model first
       Cmodel <- compileNimble(model)
+      print("model compilation complete")
 
       # now the MCMC (project = NIMBLE model already associated with a project)
       CoccMCMC <- compileNimble(occMCMC, project = model)
-  print("step 5 complete")
+      print("compilation of MCMC object complete")
       ####################################################################################
 
       single_species_model <- function(sp, spDat, dataSumm,

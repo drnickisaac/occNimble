@@ -1,6 +1,7 @@
 #' defineModel_SS
 #'
-#' @details Defines the occupancy model in Nimble for one species.
+#' @details Defines the occupancy model in Nimble for one species. Currently this implements a simple occupancy model.
+#' Next steps are to add the random walk prior and the 3 list length options.
 #' @param inclPhenology should the model account for seasonal variation?
 #' @param inclStateRE should there be a site-level random effect in the state model?
 #' @return a set of code

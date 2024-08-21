@@ -9,7 +9,7 @@ runModel(
   obsData,
   dataSumm,
   useNimble = TRUE,
-  inclPhenology = TRUE,
+  inclPhenology = FALSE,
   inclStateRE = FALSE,
   multiSp = FALSE,
   parallelize = FALSE,
@@ -97,9 +97,10 @@ formattedData <- formatData(inData)
 # Summarise the data
 dataSumm <- with(formattedData, summariseData(obsData, dataConstants))
 
-# run the model with these data for one species (very small number of iterations)
+# run the model with these data for the first three species in the dataset
 results <- runModel(formattedData$dataConstants,
                    formattedData$obsData,
-                   dataSumm)
+                   dataSumm,
+                   maxSp = 3)
 }
 }
