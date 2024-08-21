@@ -1,6 +1,6 @@
 Package: occNimble
 Title: Occupancy models in Nimble
-Version: 0.1
+Version: 0.1.2
 Date: 2024-08-21
 Authors@R: 
     person("Nick", "Isaac", , "njbi@ceh.ac.uk", role = c("aut", "cre"),

@@ -24,7 +24,7 @@ formatData <- function(inData,
   ### now limit the data to MaxSite whilst preserving the attributes that will be needed later.
   if(maxSite < length(unique(inData$siteID))){
     if(maxSite < 10) {maxSite <- 10}
-    print(paste("Subsetting the dataset to", maxSite,"sites"))
+    print(paste("Subsetting the dataset to", maxSite,"sites. Increase or decrease this value using the `maxSite` argument."))
     temp <- list(attr(inData, "trend"), attr(inData, "sp_pool"))
     inData <- subset(inData, siteID %in% paste0("site_",1:maxSite))
     attr(inData, "trend") <- temp[[1]]
@@ -72,8 +72,10 @@ formatData <- function(inData,
                         nvisit = nrow(castDat),
                         nyear = md$dataPars$nYears,
                         year = castDat$year,
-                        site = as.numeric(gsub(castDat$siteID, patt="site_", repl=""))
+                        #site = as.numeric(gsub(castDat$siteID, patt="site_", repl=""))
+                        site = as.numeric(factor(castDat$siteID))
                         )
+  # need some way to link site number with site identity
 
   if(inclPhenology){dataConstants$JulDate <- castDat$jday}
 
