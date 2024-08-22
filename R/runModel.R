@@ -319,9 +319,6 @@ runModel <- function(dataConstants,
       print(paste('Warning: only the first', nSpMod, 'will be used in modelling: others will be ignored'))
     }
 
-    # put all of that into the list that spOccupancy wants
-    dat <- formattedData$dataConstants
-
     # set priors and initial values
     priors <- list(alpha.normal = list(mean = 0, var = 5),
                    beta.normal = list(mean = 0, var = 5))
@@ -335,7 +332,7 @@ runModel <- function(dataConstants,
       if(grepl("cont", ListLen, ignore.case = TRUE)){
         det.formula <- ~ as.factor(Year) + logL
       } else if(grepl("cat", ListLen, ignore.case = TRUE)){
-        det.formula <- ~ as.factor(Year) + DT2 + DT3
+        det.formula <- ~ as.factor(Year) + as.factor(DT2) + as.factor(DT3)
       }
     } else {
       det.formula <- ~ as.factor(Year)
@@ -364,6 +361,8 @@ runModel <- function(dataConstants,
       n.batch <- 200
       batch.length <- n.iter/n.batch
 
+      print(str(dat))
+
       # now fit
       out <- tPGOcc(occ.formula = occ.formula,
                     det.formula = det.formula,
@@ -384,9 +383,9 @@ runModel <- function(dataConstants,
       #av_cores <- parallel::detectCores() - 1
       yearEff <- pbmcapply::pbmclapply(1:nSpMod, function(i){
         single_species_spOcc(sp = i,
-                             y = formattedData$obsData$y[,,,i],
-                             spName = formattedData$md$datastr$sp_n_Site$species[i],
-                             dat = dat,
+                             y = obsData$y[,,,i],
+                             spName = dimnames(formattedData$obsData$y)[[4]][i],
+                             dat = dataConstants,
                              inits = inits,
                              n.iter = n.iter,
                              n.burn = n.burn,
@@ -400,8 +399,9 @@ runModel <- function(dataConstants,
     } else {
       yearEff <- lapply(1:nSpMod, function(i){
         single_species_spOcc(sp = i,
-                             y = formattedData$obsData$y[,,,i],
-                             dat = dat,
+                             y = obsData$y[,,,i],
+                             spName = dimnames(formattedData$obsData$y)[[4]][i],
+                             dat = dataConstants,
                              inits = inits,
                              n.iter = n.iter,
                              n.burn = n.burn,
@@ -412,7 +412,7 @@ runModel <- function(dataConstants,
       }
       )
     }
-    names(yearEff) <- dimnames(formattedData$obsData)[[4]][1:nSpMod]
+    names(yearEff) <- dimnames(obsData)[[4]][1:nSpMod]
     attr(yearEff, "modelCode") <- list(occ = occ.formula, det = det.formula)
 
   #####################################################################
