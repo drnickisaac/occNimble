@@ -188,7 +188,7 @@ runModel <- function(dataConstants,
       #print("model definition read in")
 
       init.vals <- list(z = dataSumm$occMatrix[1,,], # value for species 1
-                        lam.0 = logit(dataSumm$stats$naiveOcc)[1], # value for species 1
+                        lam.0 = logit(dataSumm$stats$naiveOcc[1] * 0.99), # value for species 1
                         Trend = rnorm(n=1),
                         alpha.0 = 0)
 
@@ -247,7 +247,7 @@ runModel <- function(dataConstants,
 
         # finish initialization
         spInits <- list(z = Z,
-                        lam.0 = logit(dataSumm$stats$naiveOcc)[sp] * .999) # to avoid numeric problem
+                        lam.0 = logit(dataSumm$stats$naiveOcc[sp] * .99)) # to avoid numeric problem
         Cmodel$setInits(spInits)
 
         # test whether the model is fully initialised
@@ -272,10 +272,11 @@ runModel <- function(dataConstants,
       ####################################################################################
 
       ####### run the model for each species
+      nSpMod <- formattedData$dataConstants$nsp
 
       if(parallelize){
         #av_cores <- parallel::detectCores() - 1
-        yearEff <- pbmcapply::pbmclapply(1:formattedData$dataConstants$nsp, function(i){
+        yearEff <- pbmcapply::pbmclapply(1:nSpMod, function(i){
           single_species_model(sp = i,
                                spDat = lapply(obsData, function(x) x[i,]),
                                dataSumm = dataSumm,
@@ -288,7 +289,7 @@ runModel <- function(dataConstants,
         mc.cores = getOption("mc.cores", 7L)  #av_cores
         )
       } else {
-        yearEff <- lapply(1:formattedData$dataConstants$nsp, function(i){
+        yearEff <- lapply(1:nSpMod, function(i){
           single_species_model(sp = i,
                                spDat = lapply(obsData, function(x) x[i,]),
                                dataSumm = dataSumm,
@@ -300,7 +301,7 @@ runModel <- function(dataConstants,
         }
         )
       }
-      names(yearEff) <- dimnames(dataSumm$occMatrix)[[1]][1:maxSp]
+      names(yearEff) <- dimnames(dataSumm$occMatrix)[[1]][1:nSpMod]
       attr(yearEff, "modelCode") <- model$getCode()
     }
 
@@ -309,7 +310,7 @@ runModel <- function(dataConstants,
   }
   else {
     # for simplicity, let's just report the annual total count across all data types
-    totalObs <- sapply(1:maxSp, function(i) rowSums(sapply(obsData, function(x) x[i,])))
+    totalObs <- sapply(1:nSpMod, function(i) rowSums(sapply(obsData, function(x) x[i,])))
 
     mData <- with(dataConstants, data.frame(site=site, year=year))
     mData <- melt(cbind(mData, totalObs), id=1:2)
