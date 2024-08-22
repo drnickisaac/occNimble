@@ -5,6 +5,7 @@
 #' @param obsData dataframe produced by formatData()
 #' @param dataSumm$stats dataframe produced by formatData()
 #' @param format Either "Nimble" (default) or "spOcc"
+#' @param ListLen should be included as continuous ("Cont"), categorical ("Cat") or excluded (NULL)
 #' @param inclPhenology should the model account for seasonal variation?
 #' @param inclStateRE should there be a site-level random effect in the state model?
 #' @param multiSp should the model be run as a multispecies model, or many single-species models?
@@ -76,6 +77,7 @@ runModel <- function(dataConstants,
                      dataSumm,
                      format = "Nimble",
                      inclPhenology = FALSE,
+                     ListLen = NULL,
                      inclStateRE = FALSE,
                      multiSp = FALSE,
                      parallelize = FALSE,
@@ -194,6 +196,8 @@ runModel <- function(dataConstants,
       ############################################ end multispecies
 
     } else { # sequential single-species option
+      if(is.null(ListLen)) warning("ListLength option not implemented in Nimble")
+
       # step 1 define the model code
       modelcode <- defineModel_SS(inclPhenology = inclPhenology,
                                   inclStateRE = inclStateRE)
