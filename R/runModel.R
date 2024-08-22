@@ -314,8 +314,8 @@ runModel <- function(dataConstants,
   }
   else if(format == "spOcc") {
     # truncate the dataset if there are too many species
-    if(dim(obsData$y)[1] > nSpMod){
-      obsData <- lapply(obsData, function(x) x[1:nSpMod,])
+    if(dim(obsData$y)[4] > nSpMod){
+      obsData$y <- obsData$y[,,,1:nSpMod]
       print(paste('Warning: only the first', nSpMod, 'will be used in modelling: others will be ignored'))
     }
 
