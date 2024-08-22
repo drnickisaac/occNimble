@@ -343,7 +343,7 @@ runModel <- function(dataConstants,
 
     if(inclPhenology){warning("phenology option not yet implemented")}
 
-    single_species_spOcc <- function(sp, y,
+    single_species_spOcc <- function(sp, y, spName=NULL,
                                      dat,
                                      inits,
                                      n.iter, n.burn, n.thin, n.chain,
@@ -355,8 +355,8 @@ runModel <- function(dataConstants,
 
       # write an informative message about this species' data
       nS <- sum(rowSums(Z, na.rm=T)>0)
-      spName <- dataSumm$stats$species[sp]
-      print(paste0("Now running ", spName, ", which is present on ", nS, " sites"))
+      if(!is.null(spName))
+        print(paste0("Now running ", spName, ", which is present on ", nS, " sites"))
 
       # MCMC settings
       # I find it easier to think in terms of samples (to be comparable to sparta)
@@ -385,6 +385,7 @@ runModel <- function(dataConstants,
       yearEff <- pbmcapply::pbmclapply(1:nSpMod, function(i){
         single_species_spOcc(sp = i,
                              y = formattedData$obsData$y[,,,i],
+                             spName = formattedData$md$datastr$sp_n_Site$species[i],
                              dat = dat,
                              inits = inits,
                              n.iter = n.iter,
