@@ -275,7 +275,7 @@ runModel <- function(dataConstants,
 
       if(parallelize){
         #av_cores <- parallel::detectCores() - 1
-        yearEff <- pbmcapply::pbmclapply(1:maxSp, function(i){
+        yearEff <- pbmcapply::pbmclapply(1:formattedData$dataConstants$nsp, function(i){
           single_species_model(sp = i,
                                spDat = lapply(obsData, function(x) x[i,]),
                                dataSumm = dataSumm,
@@ -288,7 +288,7 @@ runModel <- function(dataConstants,
         mc.cores = getOption("mc.cores", 7L)  #av_cores
         )
       } else {
-        yearEff <- lapply(1:maxSp, function(i){
+        yearEff <- lapply(1:formattedData$dataConstants$nsp, function(i){
           single_species_model(sp = i,
                                spDat = lapply(obsData, function(x) x[i,]),
                                dataSumm = dataSumm,
