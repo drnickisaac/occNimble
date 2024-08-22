@@ -115,14 +115,6 @@ runModel <- function(dataConstants,
 
     ###################################################################
   if(format == "Nimble") {
-    # truncate the dataset if there are too many species
-    if(dim(obsData$y)[1] > maxSp){
-      obsData <- lapply(obsData, function(x) x[1:maxSp,])
-      dataSumm$occMatrix <- dataSumm$occMatrix[1:maxSp,,]
-      dataSumm$stats <- dataSumm$stats[1:maxSp,]
-      dataConstants$nsp <- maxSp
-      print(paste('Warning: only the first', maxSp, 'will be used in modelling: others will be ignored'))
-    }
 
     if(multiSp == TRUE){ # Multispecies option - not edited for simple occupancy
 
@@ -388,7 +380,7 @@ runModel <- function(dataConstants,
       #av_cores <- parallel::detectCores() - 1
       yearEff <- pbmcapply::pbmclapply(1:nSpMod, function(i){
         single_species_spOcc(sp = i,
-                             y = formattedData$obsData[,,,i],
+                             y = formattedData$obsData$y[,,,i],
                              dat = dat,
                              inits = inits,
                              n.iter = n.iter,
@@ -403,7 +395,7 @@ runModel <- function(dataConstants,
     } else {
       yearEff <- lapply(1:nSpMod, function(i){
         single_species_spOcc(sp = i,
-                             y = formattedData$obsData[,,,i],
+                             y = formattedData$obsData$y[,,,i],
                              dat = dat,
                              inits = inits,
                              n.iter = n.iter,

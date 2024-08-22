@@ -153,7 +153,7 @@ formatData <- function(inData,
 
     temp <- melt(cbind(bd, spObs), id = 1:ncol(bd))
 
-    obsData <- acast(temp, siteID ~ year ~ Replicate ~ variable)
+    obsData <- list(y=acast(temp, siteID ~ year ~ Replicate ~ variable))
 
   ########################################################
 
