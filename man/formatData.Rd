@@ -4,10 +4,21 @@
 \alias{formatData}
 \title{formatData}
 \usage{
-formatData(inData, inclPhenology = TRUE, minSite = 1, maxSite = 999)
+formatData(
+  inData,
+  format = "Nimble",
+  ListLen = NULL,
+  inclPhenology = TRUE,
+  minSite = 1,
+  maxSite = 999
+)
 }
 \arguments{
-\item{inData}{A dataset produced by the simulations}
+\item{inData}{A dataset with columns "species", "siteID", "survey" and "year"}
+
+\item{format}{Either "Nimble" (default) or "spOcc"}
+
+\item{ListLen}{should be included as continuous ("Cont"), categorical ("Cat") or excluded (NULL)}
 
 \item{inclPhenology}{should the model account for seasonal variation?}
 

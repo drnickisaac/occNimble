@@ -18,5 +18,6 @@ a set of code
 defineModel_SS
 }
 \details{
-Defines the occupancy model in Nimble for one species.
+Defines the occupancy model in Nimble for one species. Currently this implements a simple occupancy model.
+Next steps are to add the random walk prior and the 3 list length options.
 }

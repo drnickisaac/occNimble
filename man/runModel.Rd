@@ -8,8 +8,9 @@ runModel(
   dataConstants,
   obsData,
   dataSumm,
-  useNimble = TRUE,
+  format = "Nimble",
   inclPhenology = FALSE,
+  ListLen = NULL,
   inclStateRE = FALSE,
   multiSp = FALSE,
   parallelize = FALSE,
@@ -26,9 +27,11 @@ runModel(
 
 \item{obsData}{dataframe produced by formatData()}
 
-\item{useNimble}{option to bypass the model fitting in Nimble (just for testing the code)}
+\item{format}{Either "Nimble" (default) or "spOcc"}
 
 \item{inclPhenology}{should the model account for seasonal variation?}
+
+\item{ListLen}{should be included as continuous ("Cont"), categorical ("Cat") or excluded (NULL)}
 
 \item{inclStateRE}{should there be a site-level random effect in the state model?}
 

@@ -22,7 +22,7 @@
 #' @import parallel
 #' @import coda
 #' @import reshape2
-#' @import lme4
+#' @import spOccupancy
 
 #' @examples
 #' \dontrun{
