@@ -331,7 +331,17 @@ runModel <- function(dataConstants,
 
     # model specification for the occupancy and detectability
     occ.formula <- ~ as.factor(Site) + as.factor(Year)
-    det.formula <- ~ as.factor(Year) + logL
+    if(!is.null(ListLen)){
+      if(grepl("cont", ListLen, ignore.case = TRUE)){
+        det.formula <- ~ as.factor(Year) + logL
+      } else if(grepl("cat", ListLen, ignore.case = TRUE)){
+        det.formula <- ~ as.factor(Year) + DT2 + DT3
+      }
+    } else {
+      det.formula <- ~ as.factor(Year)
+    }
+
+    if(inclPhenology){warning("phenology option not yet implemented")}
 
     single_species_spOcc <- function(sp, y,
                                      dat,
