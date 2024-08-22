@@ -330,12 +330,12 @@ runModel <- function(dataConstants,
     occ.formula <- ~ as.factor(Site) + as.factor(Year)
     if(!is.null(ListLen)){
       if(grepl("cont", ListLen, ignore.case = TRUE)){
-        det.formula <- ~ as.factor(Year) + logL
+        det.formula <- ~ as.factor(year) + logL
       } else if(grepl("cat", ListLen, ignore.case = TRUE)){
-        det.formula <- ~ as.factor(Year) + as.factor(DT2) + as.factor(DT3)
+        det.formula <- ~ as.factor(year) + as.factor(DT2) + as.factor(DT3)
       }
     } else {
-      det.formula <- ~ as.factor(Year)
+      det.formula <- ~ as.factor(year)
     }
 
     if(inclPhenology){warning("phenology option not yet implemented")}
