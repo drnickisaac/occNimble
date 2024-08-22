@@ -99,23 +99,22 @@ runModel <- function(dataConstants,
   # kludge required: if maxSp is set to 1 (or zero) then problems arise later.
   if(maxSp < 2) maxSp <- 2
 
-  # truncate the dataset if there are too many species
-  if(dim(obsData$y)[1] > maxSp){
-    obsData <- lapply(obsData, function(x) x[1:maxSp,])
-    dataSumm$occMatrix <- dataSumm$occMatrix[1:maxSp,,]
-    dataSumm$stats <- dataSumm$stats[1:maxSp,]
-    dataConstants$nsp <- maxSp
-    print(paste('Warning: only the first', maxSp, 'will be used in modelling: others will be ignored'))
-  }
-
   ####### the number of species to be modelled
-  nSpMod <- min(formattedData$dataConstants$nsp, maxSp)
+  nSpMod <- min(dim(obsData$y)[1], maxSp)
 
   if(is.null(n.burn)) n.burn = n.iter/2
 
     ###################################################################
   if(format == "Nimble") {
 
+    # truncate the dataset if there are too many species
+    if(dim(obsData$y)[1] > nSpMod){
+      obsData <- lapply(obsData, function(x) x[1:nSpMod,])
+      dataSumm$occMatrix <- dataSumm$occMatrix[1:nSpMod,,]
+      dataSumm$stats <- dataSumm$stats[1:nSpMod,]
+      dataConstants$nsp <- nSpMod
+      print(paste('Warning: only the first', nSpMod, 'will be used in modelling: others will be ignored'))
+    }
     if(multiSp == TRUE){ # Multispecies option - not edited for simple occupancy
 
       # step 1 define the model code
@@ -314,6 +313,11 @@ runModel <- function(dataConstants,
 
   }
   else if(format == "spOcc") {
+    # truncate the dataset if there are too many species
+    if(dim(obsData$y)[1] > nSpMod){
+      obsData <- lapply(obsData, function(x) x[1:nSpMod,])
+      print(paste('Warning: only the first', nSpMod, 'will be used in modelling: others will be ignored'))
+    }
 
     # put all of that into the list that spOccupancy wants
     dat <- formattedData$dataConstants
