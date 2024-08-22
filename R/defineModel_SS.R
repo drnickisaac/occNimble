@@ -11,6 +11,7 @@
 ###########################################################################
 
 defineModel_SS <- function(inclPhenology = TRUE,
+                           ListLen = NULL,
                            inclStateRE = FALSE){
 
   modelcode <- nimbleCode({
@@ -38,10 +39,22 @@ defineModel_SS <- function(inclPhenology = TRUE,
       y[k] ~ dbern(prob = Py[k]) # Observed data
       Py[k] <- z[site[k], year[k]] * p1[k]
       if(inclPhenology){
-        logit(p1[k]) <- alpha.0 + alpha.1 * (f_JD[JulDate[k]] - max(f_JD[1:365]))
+        phenoComp[k] <- alpha.1 * (f_JD[JulDate[k]] - max(f_JD[1:365]))
       } else {
-        logit(p1[k]) <- alpha.0
+        phenoComp[k] <- 0
       }
+      if(!is.null(ListLen)){
+        if(ListLen == "cat") {
+          ListLenComp[k] <- gamma.1 * DT2[k] + gamma.2 * DT3[k]
+        } else if(ListLen == "cont") {
+          ListLenComp[k] <- gamma.1 * log(L[k])
+        } else {
+          stop("invalid List Length option")
+        }
+      } else {
+        ListLenComp[k] <- 0
+      }
+      logit(p1[k]) <- alpha.0 + phenoComp[k] + ListLenComp[k]
     }
 
     ######################### Seasonality shared effect
@@ -60,6 +73,16 @@ defineModel_SS <- function(inclPhenology = TRUE,
       beta1 ~ dunif(100, 250) # peak detectability/activity. Not constrained to fall within the field season (c(100, 250))
       beta2 ~ T(dt(0, 1, 1), 10, 200) # Half Cauchy. Stdev of phenology. At sd=500 the curve is entirely flat
     }
+
+    if(!is.null(ListLen)){
+      if(ListLen == "cat") {
+        gamma.1 ~ dnorm(0, tau = 1/2.72)
+        gamma.2 ~ dnorm(0, tau = 1/2.72)
+      } else if(ListLen == "cont") {
+        gamma.1 ~ T(dt(0, 1, 1), 0, Inf) # constrained to be positive
+      }
+    }
+
     #########################  derived parameters
     for(t in 1:nyear){
       psi.fs[t] <- mean(z[1:nsite,t])

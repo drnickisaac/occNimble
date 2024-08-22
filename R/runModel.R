@@ -187,7 +187,6 @@ runModel <- function(dataConstants,
       ############################################ end multispecies
 
     } else { # sequential single-species option
-      if(is.null(ListLen)) warning("ListLength option not implemented in Nimble")
 
       # step 1 define the model code
       modelcode <- defineModel_SS(inclPhenology = inclPhenology,
@@ -207,6 +206,16 @@ runModel <- function(dataConstants,
         init.vals$sd.eta <- 2
         init.vals$eta <- rnorm(n=dataConstants$nsite, mean=0, sd=2)
       }
+      if(!is.null(ListLen)) {
+        if(ListLen == "cont"){
+          init.vals$gamma.1 <- 0.1
+        } else if(ListLen == "cat"){
+          init.vals$gamma.1 <- 0.1
+          init.vals$gamma.2 <- 0.1
+        } else {
+          stop("invalid List Length option")
+        }
+      }
       #print("initial values set")
 
       # step 2 create an operational from from NIMBLE/BUGS code
@@ -221,6 +230,10 @@ runModel <- function(dataConstants,
       if(allPars) {
         params <- c(params, 'lam.0', 'psi.fs', "alpha.0")
         if(inclPhenology) params <- c(params, "beta1", "beta2", "alpha.1")
+        if(!is.null(ListLen)) {
+          params <- c(params, "gamma.1")
+          if(ListLen == "cat") params = c(params, "gamma.2")
+        }
         if(inclStateRE) params <- c(params, "sd.eta")
       }
       occMCMC <- buildMCMC(model,
@@ -360,8 +373,6 @@ runModel <- function(dataConstants,
       # so I create that first and work back to batch size
       n.batch <- 200
       batch.length <- n.iter/n.batch
-
-      print(str(dat))
 
       # now fit
       out <- tPGOcc(occ.formula = occ.formula,
