@@ -4,7 +4,7 @@
 #' @param dataConstants dataframe produced by formatData()
 #' @param obsData dataframe produced by formatData()
 #' @param dataSumm$stats dataframe produced by formatData()
-#' @param useNimble option to bypass the model fitting in Nimble (just for testing the code)
+#' @param format Either "Nimble" (default) or "spOcc"
 #' @param inclPhenology should the model account for seasonal variation?
 #' @param inclStateRE should there be a site-level random effect in the state model?
 #' @param multiSp should the model be run as a multispecies model, or many single-species models?
@@ -74,7 +74,7 @@
 runModel <- function(dataConstants,
                      obsData,
                      dataSumm,
-                     useNimble = TRUE,
+                     format = "Nimble",
                      inclPhenology = FALSE,
                      inclStateRE = FALSE,
                      multiSp = FALSE,
@@ -106,9 +106,21 @@ runModel <- function(dataConstants,
     print(paste('Warning: only the first', maxSp, 'will be used in modelling: others will be ignored'))
   }
 
+  ####### the number of species to be modelled
+  nSpMod <- min(formattedData$dataConstants$nsp, maxSp)
+
+  if(is.null(n.burn)) n.burn = n.iter/2
+
     ###################################################################
-  if(useNimble) {
-    if(is.null(n.burn)) n.burn = n.iter/2
+  if(format == "Nimble") {
+    # truncate the dataset if there are too many species
+    if(dim(obsData$y)[1] > maxSp){
+      obsData <- lapply(obsData, function(x) x[1:maxSp,])
+      dataSumm$occMatrix <- dataSumm$occMatrix[1:maxSp,,]
+      dataSumm$stats <- dataSumm$stats[1:maxSp,]
+      dataConstants$nsp <- maxSp
+      print(paste('Warning: only the first', maxSp, 'will be used in modelling: others will be ignored'))
+    }
 
     if(multiSp == TRUE){ # Multispecies option - not edited for simple occupancy
 
@@ -271,9 +283,6 @@ runModel <- function(dataConstants,
 
       ####################################################################################
 
-      ####### run the model for each species
-      nSpMod <- formattedData$dataConstants$nsp
-
       if(parallelize){
         #av_cores <- parallel::detectCores() - 1
         yearEff <- pbmcapply::pbmclapply(1:nSpMod, function(i){
@@ -308,27 +317,97 @@ runModel <- function(dataConstants,
     #####################################################################
 
   }
-  else {
-    # for simplicity, let's just report the annual total count across all data types
-    totalObs <- sapply(1:nSpMod, function(i) rowSums(sapply(obsData, function(x) x[i,])))
+  else if(format == "spOcc") {
 
-    mData <- with(dataConstants, data.frame(site=site, year=year))
-    mData <- melt(cbind(mData, totalObs), id=1:2)
-    names(mData)[3] <- "species"
-    # NB mData has one row per round
+    # put all of that into the list that spOccupancy wants
+    dat <- formattedData$dataConstants
 
-    yearEff <- t(sapply(unique(mData$species), function(sp){
-      spDat <- subset(mData, species == sp)
-      #subset to the sites with >0 observations
-      occSites <- which(acast(spDat, site~., value.var="value", sum) > 0)
-      mod <- glm(value ~ year + factor(site),
-                 data = subset(spDat, site %in% occSites),
-                 family = "poisson")
-      return(as.numeric(summary(mod)$coefficients["year",1:2]))
-    }))
-    dimnames(yearEff)[[2]] <- c("Estimate", "Std. Error")
-    dimnames(yearEff)[[1]] <- paste0("species", dimnames(obsData$y2)[[1]])
+    # set priors and initial values
+    priors <- list(alpha.normal = list(mean = 0, var = 5),
+                   beta.normal = list(mean = 0, var = 5))
 
+    inits <- list(alpha = 0,
+                  beta = 0)
+
+    # model specification for the occupancy and detectability
+    occ.formula <- ~ as.factor(Site) + as.factor(Year)
+    det.formula <- ~ as.factor(Year) + logL
+
+    single_species_spOcc <- function(sp, y,
+                                     dat,
+                                     inits,
+                                     n.iter, n.burn, n.thin, n.chain,
+                                     occ.formula,
+                                     det.formula){
+      dat$y <- y
+      Z <- apply(y, c(1, 2), function(a) as.numeric(sum(a, na.rm = TRUE) > 0))
+      inits$z <- Z
+
+      # write an informative message about this species' data
+      nS <- sum(rowSums(Z, na.rm=T)>0)
+      spName <- dataSumm$stats$species[sp]
+      print(paste0("Now running ", spName, ", which is present on ", nS, " sites"))
+
+      # MCMC settings
+      # I find it easier to think in terms of samples (to be comparable to sparta)
+      # so I create that first and work back to batch size
+      n.batch <- 200
+      batch.length <- n.iter/n.batch
+
+      # now fit
+      out <- tPGOcc(occ.formula = occ.formula,
+                    det.formula = det.formula,
+                    data = dat,
+                    inits = inits,
+                    priors = priors,
+                    n.batch = n.batch,
+                    batch.length = batch.length,
+                    n.omp.threads = n.chain,
+                    verbose = TRUE,
+                    n.report = 1000,
+                    n.burn = n.burn,
+                    n.thin = n.thin,
+                    n.chain = n.chain)
+    }
+
+    if(parallelize){
+      #av_cores <- parallel::detectCores() - 1
+      yearEff <- pbmcapply::pbmclapply(1:nSpMod, function(i){
+        single_species_spOcc(sp = i,
+                             y = formattedData$obsData[,,,i],
+                             dat = dat,
+                             inits = inits,
+                             n.iter = n.iter,
+                             n.burn = n.burn,
+                             n.thin = n.thin,
+                             n.chain = n.chain,
+                             occ.formula = occ.formula,
+                             det.formula = det.formula)
+      },
+      mc.cores = getOption("mc.cores", 7L)  #av_cores
+      )
+    } else {
+      yearEff <- lapply(1:nSpMod, function(i){
+        single_species_spOcc(sp = i,
+                             y = formattedData$obsData[,,,i],
+                             dat = dat,
+                             inits = inits,
+                             n.iter = n.iter,
+                             n.burn = n.burn,
+                             n.thin = n.thin,
+                             n.chain = n.chain,
+                             occ.formula = occ.formula,
+                             det.formula = det.formula)
+      }
+      )
+    }
+    names(yearEff) <- dimnames(formattedData$obsData)[[4]][1:nSpMod]
+    attr(yearEff, "modelCode") <- list(occ = occ.formula, det = det.formula)
+
+  #####################################################################
+
+  } else {
+    stop("format not known")
   }
   return(yearEff)
 }

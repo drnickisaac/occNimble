@@ -2,15 +2,20 @@
 #'
 #' @details Formats data ready for Nimble
 #' @param minSite the threshold minimum number of sites for a species to be considered for modelling
-#' @param inData A dataset produced by the simulations
+#' @param inData A dataset with columns "species", "siteID", "survey" and "year"
+#' @param format Either "Nimble" (default) or "spOcc"
 #' @param inclPhenology should the model account for seasonal variation?
+#' @param ListLen should be included as continuous ("Cont"), categorical ("Cat") or excluded (NULL)
 #' @param minSite the threshold minimum number of sites for a species to be considered for modelling
 #' @param maxSite defines a limit on the number of sites in the database
 #' @return list of two data frames
 #' @import reshape2
+#' @import dplyr
 #' @export
 
 formatData <- function(inData,
+                       format = "Nimble",
+                       ListLen = NULL,
                        inclPhenology = TRUE,
                        minSite = 1, maxSite = 999){
 
@@ -25,26 +30,15 @@ formatData <- function(inData,
   if(maxSite < length(unique(inData$siteID))){
     if(maxSite < 10) {maxSite <- 10}
     print(paste("Subsetting the dataset to", maxSite,"sites. Increase or decrease this value using the `maxSite` argument."))
-    temp <- list(attr(inData, "trend"), attr(inData, "sp_pool"))
-    inData <- subset(inData, siteID %in% paste0("site_",1:maxSite))
-    attr(inData, "trend") <- temp[[1]]
-    attr(inData, "sp_pool") <- temp[[2]]
+    sites2incl <- sample(unique(inData$siteID), maxSite)
+    inData <- subset(inData, siteID %in% sites2incl)
   }
 
-  castDat <- dcast(inData, year + siteID + survey ~ "nsp",
-                   value.var = "species", fun = length, fill = 0)
-
-  # Julian date
-  castDat$jday <- as.numeric(format(as.POSIXlt(castDat$survey, format = "%d%b%y"), "%j"))
-
-  # renumber years starting at 1
-  castDat$Year <- castDat$year # save a copy of the original
-  castDat$year <- 1+ castDat$Year - min(castDat$Year)
-
+  ########################################################
   # set the minimum number of sites, as there are some species that were never observed.
   if(minSite < 1) minSite <- 1
 
-  # now restrict the data to species that occur on at least `minSite` sites
+  # now identify species that occur on at least `minSite` sites
   # apparent occupancy matrix across all species:site combos for all data types
   sp_site <- (acast(inData, species~siteID, value.var = "year", function(x) max(x) > 0, fill = 0))
 
@@ -58,6 +52,19 @@ formatData <- function(inData,
     stop(paste0("There are no species with enough sites model"))
   }
 
+  ##################### format data with one row per visit
+  castDat <- dcast(inData, year + siteID + survey ~ "nsp",
+                   value.var = "species", fun = length, fill = 0)
+
+  # Julian date
+  castDat$jday <- as.numeric(format(as.POSIXlt(castDat$survey, format = "%d%b%y"), "%j"))
+
+  # renumber years starting at 1
+  castDat$Year <- castDat$year # save a copy of the original
+  castDat$year <- 1+ castDat$Year - min(castDat$Year)
+
+  ########################################################
+
   # create metadata object
   md <- formatMetadata(inData)
 
@@ -67,24 +74,93 @@ formatData <- function(inData,
                       minYr = min(castDat$Year),
                       maxYr = max(castDat$Year))
 
-  dataConstants <- list(nsp = as.numeric(md$settings["sp_modelled"]),
-                        nsite = md$dataPars$nSites,
-                        nvisit = nrow(castDat),
-                        nyear = md$dataPars$nYears,
-                        year = castDat$year,
-                        #site = as.numeric(gsub(castDat$siteID, patt="site_", repl=""))
-                        site = as.numeric(factor(castDat$siteID))
-                        )
-  # need some way to link site number with site identity
+  ########################################################
 
-  if(inclPhenology){dataConstants$JulDate <- castDat$jday}
+  if(format == "Nimble"){
+    dataConstants <- list(nsp = as.numeric(md$settings["sp_modelled"]),
+                          nsite = md$dataPars$nSites,
+                          nvisit = nrow(castDat),
+                          nyear = md$dataPars$nYears,
+                          year = castDat$year,
+                          site = as.numeric(factor(castDat$siteID))
+                          )
+    # need some way to link site number with site identity
 
-  # extract the observations and populate the obsData list
-  obsData <- list()
+    if(!is.null(ListLen)){
+      if(grepl("cont", ListLen, ignore.case = TRUE)){
+        dataConstants$L <- castDat$nsp
+      } else if(grepl("cat", ListLen, ignore.case = TRUE)){
+        dataConstants$DT2 <- as.numeric(castDat$nsp %in% 2:3)
+        dataConstants$DT3 <- as.numeric(castDat$nsp > 3)
+      }
+    }
+    if(inclPhenology){dataConstants$JulDate <- castDat$jday}
 
-  obsMat <- acast(inData, year + survey + siteID ~ species,
-                    value.var = "year", fun = function(x) max(x) > 0, fill=0)
-  obsData$y = t(obsMat)[sp2incl,]
+    # extract the observations and populate the obsData list
+    obsData <- list()
+
+    obsMat <- acast(inData, year + survey + siteID ~ species,
+                      value.var = "year", fun = function(x) max(x) > 0, fill=0)
+    obsData$y = t(obsMat)[sp2incl,]
+
+  ########################################################
+
+  } else if(format == "spOcc") {
+    ##### for spOccupancy
+    bd <- castDat %>%
+      group_by(siteID, year) %>%
+      mutate(Replicate = 1:n())
+
+    # dimensions, site by year by reps
+    nsite <- md$dataPars$nSites
+    nyear <- md$dataPars$nYears
+    nreps <- max(bd$Replicate)
+
+    dataConstants <- list(
+      # occupancy covariates are indexed by site and year
+      occ.covs = list(
+        Year = matrix(rep(1:nyear, nsite),
+                      nsite, nyear, byrow=TRUE),
+        Site = matrix(rep(1:nsite, nyear),
+                        nsite, nyear, byrow=FALSE)
+      ),
+      # detection covariates are indexed by site, year and replicate
+      det.covs = list(
+        year = acast(bd, siteID ~ year ~ Replicate, fill = NA, value.var = "year")
+      )
+    )
+
+    if(!is.null(ListLen)){
+      if(grepl("cont", ListLen, ignore.case = TRUE)){
+        dataConstants$det.covs$logL = log(acast(bd, siteID ~ year ~ Replicate, fill = NA, value.var = "nsp"))
+      } else if(grepl("cat", ListLen, ignore.case = TRUE)){
+        bd$DT2 <- as.numeric(bd$nsp %in% 2:3)
+        bd$DT3 <- as.numeric(bd$nsp > 3)
+        dataConstants$det.covs$DT2 = acast(bd, siteID ~ year ~ Replicate, fill = NA, value.var = "DT2")
+        dataConstants$det.covs$DT3 = acast(bd, siteID ~ year ~ Replicate, fill = NA, value.var = "DT3")
+      }
+    }
+    if(inclPhenology){
+      dataConstants$det.covs$jday = acast(bd, siteID ~ year ~ Replicate, fill = NA, value.var = "jday")
+    }
+
+    # create dataset with the same number of rows but with species in columns
+    # this is what sparta would normally need. Nimble does not but spOccupancy does
+    spObs <- acast(inData, year + siteID + survey ~ species,
+                   value.var = "year", fun = function(x) length(x) > 0, fill = 0)
+
+    if(nrow(spObs) != nrow(bd)) stop("Mismatching number of rows")
+
+    temp <- melt(cbind(bd, spObs), id = 1:ncol(bd))
+
+    obsData <- acast(temp, siteID ~ year ~ Replicate ~ variable)
+
+  ########################################################
+
+  } else
+    stop("format not known")
+
+  ########################################################
 
 
 
