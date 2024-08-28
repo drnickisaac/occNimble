@@ -9,6 +9,7 @@ formatData(
   format = "Nimble",
   ListLen = NULL,
   inclPhenology = TRUE,
+  minYrPerSite = 2,
   minSite = 1,
   maxSite = 999
 )
@@ -21,6 +22,8 @@ formatData(
 \item{ListLen}{should be included as continuous ("Cont"), categorical ("Cat") or excluded (NULL)}
 
 \item{inclPhenology}{should the model account for seasonal variation?}
+
+\item{minYrPerSite}{the minimum number of years with data for a site to be included (defaults to 2, as in sparta)}
 
 \item{minSite}{the threshold minimum number of sites for a species to be considered for modelling}
 

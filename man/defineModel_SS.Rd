@@ -4,7 +4,7 @@
 \alias{defineModel_SS}
 \title{defineModel_SS}
 \usage{
-defineModel_SS(inclPhenology = TRUE, inclStateRE = FALSE)
+defineModel_SS(inclPhenology = TRUE, ListLen = NULL, inclStateRE = FALSE)
 }
 \arguments{
 \item{inclPhenology}{should the model account for seasonal variation?}

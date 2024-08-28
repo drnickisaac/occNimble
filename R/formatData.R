@@ -6,6 +6,7 @@
 #' @param format Either "Nimble" (default) or "spOcc"
 #' @param inclPhenology should the model account for seasonal variation?
 #' @param ListLen should be included as continuous ("Cont"), categorical ("Cat") or excluded (NULL)
+#' @param minYrPerSite the minimum number of years with data for a site to be included (defaults to 2, as in sparta)
 #' @param minSite the threshold minimum number of sites for a species to be considered for modelling
 #' @param maxSite defines a limit on the number of sites in the database
 #' @return list of two data frames
@@ -17,6 +18,7 @@ formatData <- function(inData,
                        format = "Nimble",
                        ListLen = NULL,
                        inclPhenology = TRUE,
+                       minYrPerSite = 2,
                        minSite = 1, maxSite = 999){
 
   # check that every year has data
@@ -25,6 +27,29 @@ formatData <- function(inData,
     missingYear <- setdiff(yrs, inData$year)
     stop(paste0(missingYear, " has no records in the input data"))
   }
+
+  ################################################
+  ### subset the data to sites occurring in N years
+  #(NB sparta does this at a later stage)
+
+  if(minYrPerSite > 1){
+    temp <- inData %>%
+      distinct(siteID, year) %>%
+      group_by(siteID) %>%
+      count()
+
+    sites_to_include <- subset(temp, n >= minYrPerSite)$siteID
+
+    print(paste(length(sites_to_include),
+                "out of",
+                length(unique(inData$siteID)),
+                "have visits from fewer than",
+                minYrPerSite,
+                "years and are being discarded."))
+
+    inData <- subset(inData, siteID %in% sites_to_include)
+  }
+  ################################################
 
   ### now limit the data to MaxSite whilst preserving the attributes that will be needed later.
   if(maxSite < length(unique(inData$siteID))){
