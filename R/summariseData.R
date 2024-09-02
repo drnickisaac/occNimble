@@ -4,7 +4,6 @@
 #' @param obsData dataframe produced by formatData()
 #' @param dataConstants dataframe produced by formatData()
 #' @return summary statistics
-#' @import dplyr
 #' @import reshape2
 #' @export
 
