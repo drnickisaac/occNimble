@@ -56,7 +56,8 @@ formatData <- function(inData,
                        ListLen = NULL,
                        inclPhenology = TRUE,
                        minYrPerSite = 2,
-                       minSite = 1, maxSite = 999){
+                       minSite = 1, maxSite = 999,
+                       verbose = TRUE){
 
   # check that every year has data
   yrs <- min(inData$year):max(inData$year)
@@ -77,12 +78,14 @@ formatData <- function(inData,
 
     sites_to_include <- subset(temp, n >= minYrPerSite)$siteID
 
-    print(paste(length(unique(inData$siteID)) - length(sites_to_include),
+    if(verbose){
+      print(paste(length(unique(inData$siteID)) - length(sites_to_include),
                 "sites out of",
                 length(unique(inData$siteID)),
                 "have visits from fewer than",
                 minYrPerSite,
                 "years and are being discarded."))
+      }
 
     inData <- subset(inData, siteID %in% sites_to_include)
   }
@@ -91,7 +94,7 @@ formatData <- function(inData,
   ### now limit the data to MaxSite whilst preserving the attributes that will be needed later.
   if(maxSite < length(unique(inData$siteID))){
     if(maxSite < 10) {maxSite <- 10}
-    print(paste("Subsetting the dataset to", maxSite,"sites. Increase or decrease this value using the `maxSite` argument."))
+    if(verbose) print(paste("Subsetting the dataset to", maxSite,"sites. Increase or decrease this value using the `maxSite` argument."))
     sites2incl <- sample(unique(inData$siteID), maxSite)
     inData <- subset(inData, siteID %in% sites2incl)
   }
@@ -107,11 +110,13 @@ formatData <- function(inData,
   sp_n_Site <- rowSums(sp_site)
   sp2incl <- which(sp_n_Site > minSite)
   nExcl <- length(sp_n_Site) - length(sp2incl)
-  print(paste('Note:',nExcl,'species out of', length(sp_n_Site), 'have been excluded because they occur on', minSite, 'sites or fewer'))
-  if(length(sp2incl) > 0) {
-    print(paste('We proceed to modelling with', length(sp2incl), 'species'))
-  } else {
-    stop(paste0("There are no species with enough sites model"))
+  if(verbose) {
+    print(paste('Note:',nExcl,'species out of', length(sp_n_Site), 'have been excluded because they occur on', minSite, 'sites or fewer'))
+    if(length(sp2incl) > 0) {
+      print(paste('We proceed to modelling with', length(sp2incl), 'species'))
+    } else {
+      stop(paste0("There are no species with enough sites model"))
+    }
   }
 
   ##################### format data with one row per visit
