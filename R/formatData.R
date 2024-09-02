@@ -10,9 +10,6 @@
 #' @param minSite the threshold minimum number of sites for a species to be considered for modelling
 #' @param maxSite defines a limit on the number of sites in the database
 #' @return list of two data frames
-#' @import reshape2
-#' @import dplyr
-#' @export
 #'
 #' @examples
 #' \dontrun{
@@ -49,6 +46,10 @@
 #' # prepare the data for the model (includes removing species found on few sites)
 #' formattedData <- formatData(inData)
 #' }
+#'
+#' @import reshape2
+#' @import dplyr
+#' @export
 
 formatData <- function(inData,
                        format = "Nimble",
