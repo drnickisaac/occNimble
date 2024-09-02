@@ -11,7 +11,7 @@
 #' @param maxSite defines a limit on the number of sites in the database
 #' @return list of two data frames
 #' @import reshape2
-#' @import dplyr
+#' @import magrittr
 #' @export
 
 formatData <- function(inData,
