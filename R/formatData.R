@@ -13,7 +13,6 @@
 #' @import reshape2
 #' @import magrittr
 #' @import dplyr
-#' @export
 #' @examples
 #' \dontrun{
 #'
@@ -50,6 +49,7 @@
 #' formattedData <- formatData(inData)
 #' }
 #'
+#' @export
 
 formatData <- function(inData,
                        format = "Nimble",

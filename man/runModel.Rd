@@ -51,7 +51,7 @@ runModel(
 
 \item{maxSp}{maximum number of species to be modelled}
 
-\item{dataSumm$stats}{dataframe produced by formatData()}
+\item{dataSumm$stats}{dataframe produced by summariseData()}
 }
 \value{
 a set of year effects

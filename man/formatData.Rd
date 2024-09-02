@@ -11,7 +11,8 @@ formatData(
   inclPhenology = TRUE,
   minYrPerSite = 2,
   minSite = 1,
-  maxSite = 999
+  maxSite = 999,
+  verbose = TRUE
 )
 }
 \arguments{
@@ -37,4 +38,41 @@ formatData
 }
 \details{
 Formats data ready for Nimble
+}
+\examples{
+\dontrun{
+
+set.seed(123)
+
+# Create data
+n <- 15000 #size of dataset
+nyear <- 20 # number of years in data
+nSamples <- 100 # set number of dates
+nSites <- 50 # set number of sites
+
+# Create somes dates
+first <- as.Date(strptime("2010/01/01", format="\%Y/\%m/\%d"))
+last <- as.Date(strptime(paste(2010+(nyear-1),"/12/31", sep=''), format="\%Y/\%m/\%d"))
+dt <- last-first
+rDates <- first + (runif(nSamples)*dt)
+
+# taxa are set as random letters
+taxa <- sample(letters, size = n, TRUE)
+
+# taxa are set as random letters: weight so that some species are more commonly observed
+taxa <- sample(letters, size = n, TRUE, prob = seq(from = 0.01, to = 0.4, length.out = 26))
+
+# sites are visited randomly
+site <- sample(paste('site_', 1:nSites, sep=''), size = n, TRUE)
+
+# Format the data
+inData <- data.frame(species = taxa,
+                     siteID = site,
+                     survey = survey,
+                     year = as.numeric(format(as.Date(survey, format="\%d/\%m/\%Y"),"\%Y")))
+
+# prepare the data for the model (includes removing species found on few sites)
+formattedData <- formatData(inData)
+}
+
 }
