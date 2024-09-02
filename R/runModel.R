@@ -394,8 +394,10 @@ runModel <- function(dataConstants,
     if(parallelize){
       #av_cores <- parallel::detectCores() - 1
       yearEff <- pbmcapply::pbmclapply(1:nSpMod, function(i){
-        formattedData_spOcc$obsData$scaff$focal <- as.numeric(formattedData_spOcc$obsData$scaff$variable == spNames[i])
-        spDat <- acast(formattedData_spOcc$obsData$scaff, siteID ~ year ~ Replicate, fill = NA, value.var = "focal")
+        obsData$scaff$focal <- obsData$scaff$variable == spNames[i]
+        obsData$scaff <- unique(obsData$scaff[, c("siteID", "year", "Replicate", "focal")])
+        spDat <- acast(obsData$scaff, siteID ~ year ~ Replicate, value.var = "focal",
+                       fun = function(x) ifelse(length(x) > 0, max(x), 0))
         single_species_spOcc(sp = i,
                              y = spDat,
                              spName = spNames[i],
@@ -412,8 +414,10 @@ runModel <- function(dataConstants,
       )
     } else {
       yearEff <- lapply(1:nSpMod, function(i){
-        obsData$scaff$focal <- as.numeric(obsData$scaff$variable == spNames[i])
-        spDat <- acast(obsData$scaff, siteID ~ year ~ Replicate, fill = NA, value.var = "focal")
+        obsData$scaff$focal <- obsData$scaff$variable == spNames[i]
+        obsData$scaff <- unique(obsData$scaff[, c("siteID", "year", "Replicate", "focal")])
+        spDat <- acast(obsData$scaff, siteID ~ year ~ Replicate, value.var = "focal",
+                       fun = function(x) ifelse(length(x) > 0, max(x), 0))
         single_species_spOcc(sp = i,
                              y = spDat,
                              spName = spNames[i],
