@@ -397,7 +397,8 @@ runModel <- function(dataConstants,
         obsData$scaff$focal <- obsData$scaff$variable == spNames[i]
         obsData$scaff <- unique(obsData$scaff[, c("siteID", "year", "Replicate", "focal")])
         spDat <- acast(obsData$scaff, siteID ~ year ~ Replicate, value.var = "focal",
-                       fun = function(x) ifelse(length(x) > 0, max(x), 0))
+                       fun = function(x) ifelse(length(x) > 0, max(x), -999))
+        spDat[spDat < 0] <- NA
         single_species_spOcc(sp = i,
                              y = spDat,
                              spName = spNames[i],
@@ -417,7 +418,8 @@ runModel <- function(dataConstants,
         obsData$scaff$focal <- obsData$scaff$variable == spNames[i]
         obsData$scaff <- unique(obsData$scaff[, c("siteID", "year", "Replicate", "focal")])
         spDat <- acast(obsData$scaff, siteID ~ year ~ Replicate, value.var = "focal",
-                       fun = function(x) ifelse(length(x) > 0, max(x), 0))
+                       fun = function(x) ifelse(length(x) > 0, max(x), -999))
+        spDat[spDat < 0] <- NA
         single_species_spOcc(sp = i,
                              y = spDat,
                              spName = spNames[i],
