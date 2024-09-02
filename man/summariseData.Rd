@@ -7,9 +7,9 @@
 summariseData(obsData, dataConstants)
 }
 \arguments{
-\item{obsData}{dataframe produced by ProcessSimDatFile()}
+\item{obsData}{dataframe produced by formatData()}
 
-\item{dataConstants}{dataframe produced by ProcessSimDatFile()}
+\item{dataConstants}{dataframe produced by formatData()}
 }
 \value{
 summary statistics

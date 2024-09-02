@@ -1,8 +1,8 @@
 #' summariseData
 #'
 #' @details Summary statistics on the input data
-#' @param obsData dataframe produced by ProcessSimDatFile()
-#' @param dataConstants dataframe produced by ProcessSimDatFile()
+#' @param obsData dataframe produced by formatData()
+#' @param dataConstants dataframe produced by formatData()
 #' @return summary statistics
 #' @import dplyr
 #' @import reshape2

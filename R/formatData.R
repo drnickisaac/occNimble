@@ -13,6 +13,42 @@
 #' @import reshape2
 #' @import dplyr
 #' @export
+#'
+#' @examples
+#' \dontrun{
+#'
+#' set.seed(123)
+#'
+#' # Create data
+#' n <- 15000 #size of dataset
+#' nyear <- 20 # number of years in data
+#' nSamples <- 100 # set number of dates
+#' nSites <- 50 # set number of sites
+#'
+#' # Create somes dates
+#' first <- as.Date(strptime("2010/01/01", format="%Y/%m/%d"))
+#' last <- as.Date(strptime(paste(2010+(nyear-1),"/12/31", sep=''), format="%Y/%m/%d"))
+#' dt <- last-first
+#' rDates <- first + (runif(nSamples)*dt)
+#'
+#' # taxa are set as random letters
+#' taxa <- sample(letters, size = n, TRUE)
+#'
+#' # taxa are set as random letters: weight so that some species are more commonly observed
+#' taxa <- sample(letters, size = n, TRUE, prob = seq(from = 0.01, to = 0.4, length.out = 26))
+#'
+#' # sites are visited randomly
+#' site <- sample(paste('site_', 1:nSites, sep=''), size = n, TRUE)
+#'
+#' # Format the data
+#' inData <- data.frame(species = taxa,
+#'                      siteID = site,
+#'                      survey = survey,
+#'                      year = as.numeric(format(as.Date(survey, format="%d/%m/%Y"),"%Y")))
+#'
+#' # prepare the data for the model (includes removing species found on few sites)
+#' formattedData <- formatData(inData)
+#' }
 
 formatData <- function(inData,
                        format = "Nimble",
@@ -40,8 +76,8 @@ formatData <- function(inData,
 
     sites_to_include <- subset(temp, n >= minYrPerSite)$siteID
 
-    print(paste(length(sites_to_include),
-                "out of",
+    print(paste(length(unique(inData$siteID)) - length(sites_to_include),
+                "sites out of",
                 length(unique(inData$siteID)),
                 "have visits from fewer than",
                 minYrPerSite,
@@ -99,6 +135,18 @@ formatData <- function(inData,
                       minYr = min(castDat$Year),
                       maxYr = max(castDat$Year))
 
+   ########################################################
+
+  # extract the observations and populate the obsData list
+  # this is the Nimble format. It is used in summariseData
+  # it is not the format used by spOccupancy: we have to create that later.
+
+  obsData <- list()
+
+  obsMat <- acast(inData, year + survey + siteID ~ species,
+                  value.var = "year", fun = function(x) max(x) > 0, fill=0)
+  obsData$y = t(obsMat)[sp2incl,]
+
   ########################################################
 
   if(format == "Nimble"){
@@ -120,13 +168,6 @@ formatData <- function(inData,
       }
     }
     if(inclPhenology){dataConstants$JulDate <- castDat$jday}
-
-    # extract the observations and populate the obsData list
-    obsData <- list()
-
-    obsMat <- acast(inData, year + survey + siteID ~ species,
-                      value.var = "year", fun = function(x) max(x) > 0, fill=0)
-    obsData$y = t(obsMat)[sp2incl,]
 
   ########################################################
 
@@ -178,7 +219,8 @@ formatData <- function(inData,
 
     temp <- melt(cbind(bd, spObs), id = 1:ncol(bd))
 
-    obsData <- list(y=acast(temp, siteID ~ year ~ Replicate ~ variable))
+    #obsData <- list(y=acast(temp, siteID ~ year ~ Replicate ~ variable))
+    obsData$scaff <- temp
 
   ########################################################
 
@@ -186,8 +228,6 @@ formatData <- function(inData,
     stop("format not known")
 
   ########################################################
-
-
 
   return(list(dataConstants = dataConstants,
               obsData = obsData,

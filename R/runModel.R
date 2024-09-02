@@ -104,17 +104,22 @@ runModel <- function(dataConstants,
 
   if(is.null(n.burn)) n.burn = n.iter/2
 
-    ###################################################################
+  ###################################################################
+  # truncate the dataset if there are too many species
+  if(dim(obsData$y)[1] > nSpMod){
+    obsData <- lapply(obsData, function(x) x[1:nSpMod,])
+    dataSumm$occMatrix <- dataSumm$occMatrix[1:nSpMod,,]
+    dataSumm$stats <- dataSumm$stats[1:nSpMod,]
+    dataConstants$nsp <- nSpMod
+    print(paste('Warning: only the first', nSpMod, 'will be used in modelling: others will be ignored'))
+  }
+
+  # put the species names in a vector
+  spNames <- dimnames(formattedData$obsData$y)[[1]][1:nSpMod]
+
+  ###################################################################
   if(format == "Nimble") {
 
-    # truncate the dataset if there are too many species
-    if(dim(obsData$y)[1] > nSpMod){
-      obsData <- lapply(obsData, function(x) x[1:nSpMod,])
-      dataSumm$occMatrix <- dataSumm$occMatrix[1:nSpMod,,]
-      dataSumm$stats <- dataSumm$stats[1:nSpMod,]
-      dataConstants$nsp <- nSpMod
-      print(paste('Warning: only the first', nSpMod, 'will be used in modelling: others will be ignored'))
-    }
     if(multiSp == TRUE){ # Multispecies option - not edited for simple occupancy
 
       # step 1 define the model code
@@ -318,7 +323,8 @@ runModel <- function(dataConstants,
         }
         )
       }
-      names(yearEff) <- dimnames(dataSumm$occMatrix)[[1]][1:nSpMod]
+      #names(yearEff) <- dimnames(dataSumm$occMatrix)[[1]][1:nSpMod] # should be same as below
+      names(yearEff) <- dimnames(formattedData$obsData$y)[[1]][1:nSpMod]
       attr(yearEff, "modelCode") <- model$getCode()
     }
 
@@ -326,11 +332,6 @@ runModel <- function(dataConstants,
 
   }
   else if(format == "spOcc") {
-    # truncate the dataset if there are too many species
-    if(dim(obsData$y)[4] > nSpMod){
-      obsData$y <- obsData$y[,,,1:nSpMod]
-      print(paste('Warning: only the first', nSpMod, 'will be used in modelling: others will be ignored'))
-    }
 
     # set priors and initial values
     priors <- list(alpha.normal = list(mean = 0, var = 5),
@@ -393,9 +394,11 @@ runModel <- function(dataConstants,
     if(parallelize){
       #av_cores <- parallel::detectCores() - 1
       yearEff <- pbmcapply::pbmclapply(1:nSpMod, function(i){
+        formattedData_spOcc$obsData$scaff$focal <- as.numeric(formattedData_spOcc$obsData$scaff$variable == spNames[i])
+        spDat <- acast(formattedData_spOcc$obsData$scaff, siteID ~ year ~ Replicate, fill = NA, value.var = "focal")
         single_species_spOcc(sp = i,
-                             y = obsData$y[,,,i],
-                             spName = dimnames(formattedData$obsData$y)[[4]][i],
+                             y = spDat,
+                             spName = spNames[i],
                              dat = dataConstants,
                              inits = inits,
                              n.iter = n.iter,
@@ -409,9 +412,11 @@ runModel <- function(dataConstants,
       )
     } else {
       yearEff <- lapply(1:nSpMod, function(i){
+        formattedData_spOcc$obsData$scaff$focal <- as.numeric(formattedData_spOcc$obsData$scaff$variable == spNames[i])
+        spDat <- acast(formattedData_spOcc$obsData$scaff, siteID ~ year ~ Replicate, fill = NA, value.var = "focal")
         single_species_spOcc(sp = i,
-                             y = obsData$y[,,,i],
-                             spName = dimnames(formattedData$obsData$y)[[4]][i],
+                             y = spDat,
+                             spName = spNames[i],
                              dat = dataConstants,
                              inits = inits,
                              n.iter = n.iter,
@@ -423,7 +428,7 @@ runModel <- function(dataConstants,
       }
       )
     }
-    names(yearEff) <- dimnames(obsData)[[4]][1:nSpMod]
+    names(yearEff) <- spNames
     attr(yearEff, "modelCode") <- list(occ = occ.formula, det = det.formula)
 
   #####################################################################
