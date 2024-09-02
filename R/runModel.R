@@ -3,7 +3,7 @@
 #' @details Runs an occupancy model for multiple species.
 #' @param dataConstants dataframe produced by formatData()
 #' @param obsData dataframe produced by formatData()
-#' @param dataSumm$stats dataframe produced by formatData()
+#' @param dataSumm$stats dataframe produced by summariseData()
 #' @param format Either "Nimble" (default) or "spOcc"
 #' @param ListLen should be included as continuous ("Cont"), categorical ("Cat") or excluded (NULL)
 #' @param inclPhenology should the model account for seasonal variation?
@@ -107,7 +107,7 @@ runModel <- function(dataConstants,
   ###################################################################
   # truncate the dataset if there are too many species
   if(dim(obsData$y)[1] > nSpMod){
-    obsData <- lapply(obsData, function(x) x[1:nSpMod,])
+    obsData$y <- obsData$y[1:nSpMod,]
     dataSumm$occMatrix <- dataSumm$occMatrix[1:nSpMod,,]
     dataSumm$stats <- dataSumm$stats[1:nSpMod,]
     dataConstants$nsp <- nSpMod
@@ -412,8 +412,8 @@ runModel <- function(dataConstants,
       )
     } else {
       yearEff <- lapply(1:nSpMod, function(i){
-        formattedData_spOcc$obsData$scaff$focal <- as.numeric(formattedData_spOcc$obsData$scaff$variable == spNames[i])
-        spDat <- acast(formattedData_spOcc$obsData$scaff, siteID ~ year ~ Replicate, fill = NA, value.var = "focal")
+        obsData$scaff$focal <- as.numeric(obsData$scaff$variable == spNames[i])
+        spDat <- acast(obsData$scaff, siteID ~ year ~ Replicate, fill = NA, value.var = "focal")
         single_species_spOcc(sp = i,
                              y = spDat,
                              spName = spNames[i],
