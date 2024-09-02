@@ -12,6 +12,7 @@
 #' @return list of two data frames
 #' @import reshape2
 #' @import magrittr
+#' @import dplyr
 #' @export
 
 formatData <- function(inData,
