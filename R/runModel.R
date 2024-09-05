@@ -102,7 +102,7 @@ runModel <- function(dataConstants,
   ####### the number of species to be modelled
   nSpMod <- min(dim(obsData$y)[1], maxSp)
 
-  if(is.null(n.burn)) n.burn = n.iter/2
+  if(is.null(n.burn)) n.burn <- round(n.iter/2)
 
   ###################################################################
   # truncate the dataset if there are too many species
