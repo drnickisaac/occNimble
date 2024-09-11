@@ -10,7 +10,7 @@
 #' @param inclStateRE should there be a site-level random effect in the state model?
 #' @param multiSp should the model be run as a multispecies model, or many single-species models?
 #' @param parallelize should the chains be run as separate processes on different cores?
-#' @param allPars if `TRUE` then all model parameters are monitored. If `FALSE`, just `lam.0bda` and `Trend`.
+#' @param allPars Either a list of parameters to monitor or logical statement: if `TRUE` then all model parameters are monitored. If `FALSE`the just `Trend`.
 #' @param n.iter number of iterations for the Nimble model. Default is 1000.
 #' @param n.burn number of iterations for the burn-in. If `NULL` (the default), then it will be set to `n.iter/2`.
 #' @param n.thin thinning for the MCMC chains. Defaults to 5
@@ -128,7 +128,7 @@ runModel <- function(dataConstants,
 
       init.vals <- list(z = dataSumm$occMatrix,
                         lam.0 = logit(dataSumm$stats$naiveOcc),
-                        Trend = rnorm(n=1),
+                        Trend = rnorm(n=1, sd=0.2),
                         spTr = rnorm(n=maxSp),
                         tau.trend = 1,
                         alpha.0 = 0)
@@ -147,11 +147,23 @@ runModel <- function(dataConstants,
                            data = obsData,
                            inits = init.vals)
 
-      params <- c("Trend")
-      if(allPars) {
-        params <- c(params, "alpha.0", 'lam.0', 'psi.fs', 'tau.trend')
-        if(inclPhenology) params <- c(params, "beta1", "beta2")
-        if(inclStateRE) params <- c(params, "sd.eta")
+      # define the model parameters and which should be monitored
+      modPars <- c("Trend", "alpha.0", 'lam.0', 'psi.fs', 'tau.trend')
+      if(is.logical(allPars)){
+        if(allPars == TRUE) {
+          params <- modPars
+          if(inclPhenology) params <- c(params, "beta1", "beta2")
+          if(inclStateRE) params <- c(params, "sd.eta")
+        } else {
+          params <- c("Trend")
+        }
+      } else {
+        # check that the manually supplied set of parameters is valid
+        if(!all(params) %in% c(modPars, "beta1", "beta2", "sd.eta")){
+          extraPars <- setdiff(params, c(modPars, "beta1", "beta2", "sd.eta"))
+          warning(paste(extraPars, "not recognised"))
+          if(all(params) %in% extraPars) stop("no valid parameters listed")
+        }
       }
 
       # step 3 build an MCMC object using buildMCMC(). we can add some customization here
@@ -200,12 +212,15 @@ runModel <- function(dataConstants,
 
       init.vals <- list(z = dataSumm$occMatrix[1,,], # value for species 1
                         lam.0 = logit(dataSumm$stats$naiveOcc[1] * 0.99), # value for species 1
-                        Trend = rnorm(n=1),
-                        alpha.0 = 0)
+                        Trend = rnorm(n = 1, sd = 0.2)
+                        )
 
       if(inclPhenology){
         init.vals$beta1 <- 180
         init.vals$beta2 <- 50
+        init.vals$alpha.0 <- 0
+      } else {
+        init.vals$alpha.0 <- -2
       }
       if(inclStateRE){
         init.vals$sd.eta <- 2

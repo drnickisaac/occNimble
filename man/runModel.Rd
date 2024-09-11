@@ -39,7 +39,7 @@ runModel(
 
 \item{parallelize}{should the chains be run as separate processes on different cores?}
 
-\item{allPars}{if \code{TRUE} then all model parameters are monitored. If \code{FALSE}, just \code{lam.0bda} and \code{Trend}.}
+\item{allPars}{Either a list of parameters to monitor or logical statement: if \code{TRUE} then all model parameters are monitored. If \code{FALSE}the just \code{Trend}.}
 
 \item{n.iter}{number of iterations for the Nimble model. Default is 1000.}
 
