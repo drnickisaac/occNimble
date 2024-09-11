@@ -149,7 +149,7 @@ runModel <- function(dataConstants,
 
       # define the model parameters and which should be monitored
       modPars <- c("Trend", "alpha.0", 'lam.0', 'psi.fs', 'tau.trend')
-      if(is.logical(allPars)){
+      if(all(is.logical(allPars))){
         if(allPars == TRUE) {
           params <- modPars
           if(inclPhenology) params <- c(params, "beta1", "beta2")
