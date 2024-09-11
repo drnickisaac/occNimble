@@ -31,7 +31,7 @@ defineModel_SS <- function(inclPhenology = TRUE,
       for(j in 1:nsite) {eta[j] ~ dnorm(0, sd=sd.eta)} # site-level random effect
       sd.eta ~ T(dt(0, 1, 1), 0, 10) # constrained
     }
-    Trend ~ dnorm(0, tau=0.001)
+    Trend ~ dnorm(0, tau=3) # highly constrained
     lam.0 ~ dnorm(0, tau=3) # highly constrained
 
     ######################### Obs model
