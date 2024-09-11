@@ -132,7 +132,7 @@ runModel <- function(dataConstants,
       }
     } else {
       # check that the manually supplied set of parameters is valid
-      if(!all(params) %in% c(modPars, "beta1", "beta2", "sd.eta")){
+      if(!all(allPars) %in% c(modPars, "beta1", "beta2", "sd.eta")){
         extraPars <- setdiff(params, c(modPars, "beta1", "beta2", "sd.eta"))
         warning(paste(extraPars, "not recognised"))
         if(all(params) %in% extraPars) stop("no valid parameters listed")
