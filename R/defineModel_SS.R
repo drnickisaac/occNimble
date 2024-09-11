@@ -64,10 +64,12 @@ defineModel_SS <- function(inclPhenology = TRUE,
       }
     }
     ######################### Obs model priors
-    alpha.0 ~ dnorm(-2, tau = 1/2.72) # logit detection probability per pan trap at peak phenology (or mean across year).
     if(inclPhenology){
-      alpha.1 ~ T(dt(0, 1, 1), 0, Inf) # constrained to be positive
-    } # scaling parameter for detection
+      alpha.0 ~ dnorm(0, tau = 1/2.72) # logit detection probability per pan trap at peak phenology (or mean across year).
+      alpha.1 ~ T(dt(0, 1, 1), 0, Inf) # scaling parameter for detection: constrained to be positive
+    } else {
+      alpha.0 ~ dnorm(-2, tau = 1) # logit detection probability throughout the year: more constained than above
+    }
 
     if(inclPhenology){
       beta1 ~ dunif(100, 250) # peak detectability/activity. Not constrained to fall within the field season (c(100, 250))

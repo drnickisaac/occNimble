@@ -1,7 +1,7 @@
 Package: occNimble
 Title: Occupancy models in Nimble and spOccupancy
-Version: 0.4.5
-Date: 2024-09-05
+Version: 0.4.6
+Date: 2024-09-11
 Authors@R: 
     person("Nick", "Isaac", , "njbi@ceh.ac.uk", role = c("aut", "cre"),
            comment = c(ORCID = "0000-0002-4869-8052"))
