@@ -121,7 +121,7 @@ runModel <- function(dataConstants,
   if(format == "Nimble") {
 
     # define the model parameters and which should be monitored
-    modPars <- c("Trend", "alpha.0", 'lam.0', 'psi.fs', 'tau.trend')
+    modPars <- c("Trend", "alpha.0", 'lam.0', 'psi.fs')
     if(all(is.logical(allPars))){
       if(allPars == TRUE) {
         params <- modPars
@@ -133,13 +133,17 @@ runModel <- function(dataConstants,
     } else {
       # check that the manually supplied set of parameters is valid
       if(!all(allPars) %in% c(modPars, "beta1", "beta2", "sd.eta")){
-        extraPars <- setdiff(params, c(modPars, "beta1", "beta2", "sd.eta"))
-        warning(paste(extraPars, "not recognised"))
-        if(all(params) %in% extraPars) stop("no valid parameters listed")
+        badPars <- setdiff(allPars, c(modPars, "beta1", "beta2", "sd.eta"))
+        warning(paste(badPars, "not recognised"))
+        if(all(params) %in% badPars) stop("no valid parameters listed")
+      } else {
+        params <- allPars
       }
     }
 
     if(multiSp == TRUE){ # Multispecies option - not edited for simple occupancy
+
+      #'tau.trend'
 
       # step 1 define the model code
       modelcode <- defineModel_MS(inclPhenology = inclPhenology,
