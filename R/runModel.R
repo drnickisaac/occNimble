@@ -132,14 +132,19 @@ runModel <- function(dataConstants,
       }
     } else {
       # check that the manually supplied set of parameters is valid
-      if(!all(allPars) %in% c(modPars, "beta1", "beta2", "sd.eta")){
-        badPars <- setdiff(allPars, c(modPars, "beta1", "beta2", "sd.eta"))
+      params <- allPars
+      if(!all(params) %in% c(modPars, "beta1", "beta2", "sd.eta")){
+        badPars <- setdiff(params, c(modPars, "beta1", "beta2", "sd.eta"))
         warning(paste(badPars, "not recognised"))
-        if(all(allPars) %in% badPars) stop("no valid parameters listed")
-      } else {
-        params <- allPars
+        if(all(params) %in% badPars) {
+          stop("no valid parameters listed")
+        } else {
+          params <- setdiff(allPars, badPars)
+        }
       }
     }
+
+    print(params)
 
     if(multiSp == TRUE){ # Multispecies option - not edited for simple occupancy
 
