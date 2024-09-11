@@ -135,7 +135,7 @@ runModel <- function(dataConstants,
       if(!all(allPars) %in% c(modPars, "beta1", "beta2", "sd.eta")){
         badPars <- setdiff(allPars, c(modPars, "beta1", "beta2", "sd.eta"))
         warning(paste(badPars, "not recognised"))
-        if(all(params) %in% badPars) stop("no valid parameters listed")
+        if(all(allPars) %in% badPars) stop("no valid parameters listed")
       } else {
         params <- allPars
       }
