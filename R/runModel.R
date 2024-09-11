@@ -120,6 +120,25 @@ runModel <- function(dataConstants,
   ###################################################################
   if(format == "Nimble") {
 
+    # define the model parameters and which should be monitored
+    modPars <- c("Trend", "alpha.0", 'lam.0', 'psi.fs', 'tau.trend')
+    if(all(is.logical(allPars))){
+      if(allPars == TRUE) {
+        params <- modPars
+        if(inclPhenology) params <- c(params, "beta1", "beta2")
+        if(inclStateRE) params <- c(params, "sd.eta")
+      } else {
+        params <- c("Trend")
+      }
+    } else {
+      # check that the manually supplied set of parameters is valid
+      if(!all(params) %in% c(modPars, "beta1", "beta2", "sd.eta")){
+        extraPars <- setdiff(params, c(modPars, "beta1", "beta2", "sd.eta"))
+        warning(paste(extraPars, "not recognised"))
+        if(all(params) %in% extraPars) stop("no valid parameters listed")
+      }
+    }
+
     if(multiSp == TRUE){ # Multispecies option - not edited for simple occupancy
 
       # step 1 define the model code
@@ -146,25 +165,6 @@ runModel <- function(dataConstants,
                            constants = dataConstants,
                            data = obsData,
                            inits = init.vals)
-
-      # define the model parameters and which should be monitored
-      modPars <- c("Trend", "alpha.0", 'lam.0', 'psi.fs', 'tau.trend')
-      if(all(is.logical(allPars))){
-        if(allPars == TRUE) {
-          params <- modPars
-          if(inclPhenology) params <- c(params, "beta1", "beta2")
-          if(inclStateRE) params <- c(params, "sd.eta")
-        } else {
-          params <- c("Trend")
-        }
-      } else {
-        # check that the manually supplied set of parameters is valid
-        if(!all(params) %in% c(modPars, "beta1", "beta2", "sd.eta")){
-          extraPars <- setdiff(params, c(modPars, "beta1", "beta2", "sd.eta"))
-          warning(paste(extraPars, "not recognised"))
-          if(all(params) %in% extraPars) stop("no valid parameters listed")
-        }
-      }
 
       # step 3 build an MCMC object using buildMCMC(). we can add some customization here
       occMCMC <- buildMCMC(model,
@@ -246,16 +246,6 @@ runModel <- function(dataConstants,
       #print("step 2 complete")
 
       # step 3 build an MCMC object using buildMCMC(). we can add some customization here
-      params <- c("Trend")
-      if(allPars) {
-        params <- c(params, 'lam.0', 'psi.fs', "alpha.0")
-        if(inclPhenology) params <- c(params, "beta1", "beta2", "alpha.1")
-        if(!is.null(ListLen)) {
-          params <- c(params, "gamma.1")
-          if(ListLen == "cat") params = c(params, "gamma.2")
-        }
-        if(inclStateRE) params <- c(params, "sd.eta")
-      }
       occMCMC <- buildMCMC(model,
                            monitors = params,
                            useConjugacy = FALSE) # useConjugacy controls whether conjugate samplers are assigned when possible
