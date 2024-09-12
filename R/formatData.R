@@ -175,6 +175,15 @@ formatData <- function(inData,
     }
     if(inclPhenology){dataConstants$JulDate <- castDat$jday}
 
+    if(verbose){
+      print(with(dataConstants, paste("Formatted data contains",
+                                      nvisit, "visits to",
+                                      nsite, "sites in",
+                                      nyear, "years, with",
+                                      nsp, "species."
+                                      )))
+    }
+
   ########################################################
 
   } else if(format == "spOcc") {

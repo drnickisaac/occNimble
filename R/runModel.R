@@ -172,16 +172,15 @@ runModel <- function(dataConstants,
                         sd.psi = rnorm(n = 1, sd = 0.02),
                         psi = rnorm(n=dataConstants$nyear, sd = 0.02),
                         mu.alpha = -1,
-                        sd.alpha = 2,
-                        alpha.0 = rnorm(n=dataConstants$nyear, mean=0, sd=2)
+                        sd.alpha = 2
                         )
 
       if(inclPhenology){
         init.vals$beta1 <- 180
         init.vals$beta2 <- 50
-        init.vals$alpha.0 <- 0
+        init.vals$alpha.0 <- rnorm(n=dataConstants$nyear, mean=0, sd=2)
       } else {
-        init.vals$alpha.0 <- -2
+        init.vals$alpha.0 <- rnorm(n=dataConstants$nyear, mean= -2, sd=2)
       }
       if(inclStateRE){
         init.vals$sd.eta <- 2
@@ -197,8 +196,8 @@ runModel <- function(dataConstants,
           stop("invalid List Length option")
         }
       }
-      print(str(init.vals))
-      print(str(dataConstants))
+      #print(str(init.vals))
+      #print(str(dataConstants))
       #print("initial values set")
 
       # step 2 create an operational from from NIMBLE/BUGS code
