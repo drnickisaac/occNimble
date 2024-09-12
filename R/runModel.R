@@ -168,7 +168,11 @@ runModel <- function(dataConstants,
 
       init.vals <- list(z = dataSumm$occMatrix[1,,], # value for species 1
                         lam.0 = logit(dataSumm$stats$naiveOcc[1] * 0.99), # value for species 1
-                        sd.psi = rnorm(n = 1, sd = 0.02)
+                        sd.psi = rnorm(n = 1, sd = 0.02),
+                        psi = dnorm(n=dataConstants$nyear, sd = 0.02),
+                        mu.alpha = -1,
+                        sd.alpha = 2,
+                        alpha.0 = rnorm(n=dataConstants$nyear, mean=0, sd=2)
                         )
 
       if(inclPhenology){
