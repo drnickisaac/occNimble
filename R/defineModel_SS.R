@@ -83,7 +83,7 @@ defineModel_SS <- function(inclPhenology = TRUE,
     }
 
     for(t in 1:nyear){
-      alpha.0[t] <- dnorm(mu.alpha, sd = sd.alpha)
+      alpha.0[t] ~ dnorm(mu.alpha, sd = sd.alpha)
     }
     sd.alpha ~ T(dt(0, 1, 1), 0, 10) # constrained
 
