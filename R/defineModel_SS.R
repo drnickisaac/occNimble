@@ -85,7 +85,7 @@ defineModel_SS <- function(inclPhenology = TRUE,
     for(t in 1:nyear){
       alpha.0[t] <- dnorm(mu.alpha, sd = sd.alpha)
     }
-    sd.alpha <- sd.eta ~ T(dt(0, 1, 1), 0, 10) # constrained
+    sd.alpha ~ T(dt(0, 1, 1), 0, 10) # constrained
 
     if(!is.null(ListLen)){
       if(ListLen == "cat") {
