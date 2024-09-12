@@ -118,99 +118,46 @@ runModel <- function(dataConstants,
   spNames <- dimnames(formattedData$obsData$y)[[1]][1:nSpMod]
 
   ###################################################################
+
   if(format == "Nimble") {
 
+    #####################################
     # define the model parameters and which should be monitored
-    modPars <- c("Trend", "alpha.0", 'lam.0', 'psi.fs')
+    modPars <- c("alpha.0", 'lam.0', 'psi.fs', "sd.psi")
+    # work out what other parameters there are
+    if(inclPhenology) modPars <- c(modPars, "alpha.1", "beta1", "beta2")
+    if(inclStateRE) modPars <- c(modPars, "sd.eta")
+    if(!is.null(ListLen)){
+      modPars <- c(modPars, "gamma.1")
+      if(ListLen == "cat") modPars <- c(modPars, "gamma.1")
+    }
+
     if(all(is.logical(allPars))){
       if(allPars == TRUE) {
         params <- modPars
-        if(inclPhenology) params <- c(params, "beta1", "beta2")
-        if(inclStateRE) params <- c(params, "sd.eta")
       } else {
-        params <- c("Trend")
+        params <- c("lam.0")
       }
     } else {
       # check that the manually supplied set of parameters is valid
       params <- allPars
-      if(!all(params) %in% c(modPars, "beta1", "beta2", "sd.eta")){
-        badPars <- setdiff(params, c(modPars, "beta1", "beta2", "sd.eta"))
+      if(!all(params %in% modPars)){
+        badPars <- setdiff(params, modPars)
         warning(paste(badPars, "not recognised"))
-        if(all(params) %in% badPars) {
+        if(all(params %in% badPars)) {
           stop("no valid parameters listed")
         } else {
-          params <- setdiff(allPars, badPars)
+          params <- setdiff(params, badPars)
         }
       }
     }
+    print(paste("Monitoring:", params))
 
-    print(params)
+    #####################################
 
     if(multiSp == TRUE){ # Multispecies option - not edited for simple occupancy
 
-      #'tau.trend'
-
-      # step 1 define the model code
-      modelcode <- defineModel_MS(inclPhenology = inclPhenology,
-                                  inclStateRE = inclStateRE)
-
-      init.vals <- list(z = dataSumm$occMatrix,
-                        lam.0 = logit(dataSumm$stats$naiveOcc),
-                        Trend = rnorm(n=1, sd=0.2),
-                        spTr = rnorm(n=maxSp),
-                        tau.trend = 1,
-                        alpha.0 = 0)
-      if(inclPhenology){
-        init.vals$beta1 <- rep(180, times=maxSp)
-        init.vals$beta2 <- rep(50, times=maxSp)
-      }
-      if(inclStateRE){
-        init.vals$sd.eta <- 2
-        init.vals$eta <- rnorm(n=dataConstants$nsite, mean=0, sd=2)
-      }
-
-      # step 2 create an operational from from NIMBLE/BUGS code
-      model <- nimbleModel(code = modelcode,
-                           constants = dataConstants,
-                           data = obsData,
-                           inits = init.vals)
-
-      # step 3 build an MCMC object using buildMCMC(). we can add some customization here
-      occMCMC <- buildMCMC(model,
-                           monitors = params,
-                           thin = n.thin,
-                           useConjugacy = FALSE) # useConjugacy controls whether conjugate samplers are assigned when possible
-
-      # step 3 before compiling the MCMC object we need to compile the model first
-      Cmodel <- compileNimble(model)
-
-      # test whether the model is fully initialised
-      if(is.na(Cmodel$calculate())) {stop("model not fully initialized")}
-      Cmodel$initializeInfo()
-
-      # now the MCMC (project = NIMBLE model already associated with a project)
-      CoccMCMC <- compileNimble(occMCMC, project = model)
-
-      # and now we can use either $run or runMCMC() on the compiled model object.
-      if(parallelize){
-        av_cores <- parallel::detectCores() - 1
-        runMCMC_samples <- pbmcapply::pbmclapply(1:n.chain, function(i)
-          runMCMC(
-            mcmc = CoccMCMC,
-            nburnin = n.burn,
-            niter = n.iter,
-            nchains = 1, samplesAsCodaMCMC = T),
-          mc.cores = av_cores)
-
-      } else {
-        runMCMC_samples <- runMCMC(CoccMCMC,
-                                   nburnin = n.burn,
-                                   niter = n.iter,
-                                   nchains = n.chain, samplesAsCodaMCMC = T)
-      }
-      yearEff <- runMCMC_samples
-
-      ############################################ end multispecies
+      stop("Multispecies not yet implemented")
 
     } else { # sequential single-species option
 
