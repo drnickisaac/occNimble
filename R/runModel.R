@@ -123,7 +123,7 @@ runModel <- function(dataConstants,
 
     #####################################
     # define the model parameters and which should be monitored
-    modPars <- c("alpha.0", 'lam.0', 'psi.fs', "sd.psi")
+    modPars <- c('lam.0', 'psi.fs', "sd.psi", "alpha.0", "mu.alpha", "sd.alpha")
     # work out what other parameters there are
     if(inclPhenology) modPars <- c(modPars, "alpha.1", "beta1", "beta2")
     if(inclStateRE) modPars <- c(modPars, "sd.eta")
@@ -168,7 +168,7 @@ runModel <- function(dataConstants,
 
       init.vals <- list(z = dataSumm$occMatrix[1,,], # value for species 1
                         lam.0 = logit(dataSumm$stats$naiveOcc[1] * 0.99), # value for species 1
-                        Trend = rnorm(n = 1, sd = 0.2)
+                        sd.psi = rnorm(n = 1, sd = 0.02)
                         )
 
       if(inclPhenology){

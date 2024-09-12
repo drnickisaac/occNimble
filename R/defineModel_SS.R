@@ -77,16 +77,15 @@ defineModel_SS <- function(inclPhenology = TRUE,
       alpha.1 ~ T(dt(0, 1, 1), 0, Inf) # scaling parameter for detection: constrained to be positive
       beta1 ~ dunif(100, 250) # peak detectability/activity. Not constrained to fall within the field season (c(100, 250))
       beta2 ~ T(dt(0, 1, 1), 10, 200) # Half Cauchy. Stdev of phenology. At sd=500 the curve is entirely flat
-      mu.alpha <- 0 # logit detection probability per pan trap at peak phenology (or mean across year).
-      tau.alpha <- 1/2.72
+      mu.alpha ~ dnorm(0, tau = 1/2.72) # logit detection probability per pan trap at peak phenology (or mean across year).
     } else {
-      mu.alpha <- -2  # logit detection probability throughout the year
-      tau.alpha <- 1 # more constained than if phenology included
+      mu.alpha ~ dnorm(-2, tau = 1)  # logit detection probability throughout the year
     }
 
     for(t in 1:nyear){
-      alpha.0[t] <- dnorm(mu.alpha, tau = tau.alpha)
+      alpha.0[t] <- dnorm(mu.alpha, sd = sd.alpha)
     }
+    sd.alpha <- sd.eta ~ T(dt(0, 1, 1), 0, 10) # constrained
 
     if(!is.null(ListLen)){
       if(ListLen == "cat") {
