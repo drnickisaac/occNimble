@@ -11,7 +11,7 @@ formatData(
   inclPhenology = TRUE,
   minYrPerSite = 2,
   minSite = 1,
-  maxSite = 999,
+  minRecs = 1,
   verbose = TRUE
 )
 }
@@ -28,7 +28,7 @@ formatData(
 
 \item{minSite}{the threshold minimum number of sites for a species to be considered for modelling}
 
-\item{maxSite}{defines a limit on the number of sites in the database}
+\item{minRecs}{the threshold minimum number of records for a species to be considered (after applying \code{minSite})}
 }
 \value{
 list of two data frames
