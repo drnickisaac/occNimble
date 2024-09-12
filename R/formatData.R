@@ -92,40 +92,38 @@ formatData <- function(inData,
   }
 
   ########################################################
+  # summarise the raw data at species level
+
+  spRec <- inData %>%
+    distinct(species, survey, siteID, year) %>%
+    group_by(species) %>%
+    count()
+
+  spSite <- inData %>%
+    distinct(species, siteID) %>%
+    group_by(species) %>%
+    count()
+
+  spSumm <- as.data.frame(cbind(spRec, spSite[,2]))
+  names(spSumm)[2:3] <- c("recs", "sites")
+
+  ########################################################
   # Filter species (part 1)
-  sp2incl <- unique(inData$species)
+  # We don't remove them from the dataset at this stage, but just identify the ones to remove later
 
-  # set the minimum number of sites, as there are some species that were never observed.
+  # set the minimum number of sites & records, as there are some species that were observed too rarely to model.
+  # first check there are no impossible numbers
   if(minSite < 1) minSite <- 1
-
-  if(minSite > 1){
-    # now identify species that occur on at least `minSite` sites
-    # apparent occupancy matrix across all species:site combos for all data types
-    sp_site <- (acast(inData, species~siteID, value.var = "year", function(x) max(x) > 0, fill = 0))
-
-    sp_n_Site <- rowSums(sp_site)
-    sp2incl <- names(which(sp_n_Site >= minSite))
-  }
-
-  # Filter species (part 2)
-  # set the minimum number of records below which we cannot model.
   if(minRecs < 1) minRecs <- 1
 
-  if(minRecs > 1){
-
-    temp <- inData %>%
-      distinct(species, survey, siteID, year) %>%
-      group_by(species) %>%
-      count()
-
-    sp2incl <- intersect(temp$species[temp$n >= minRecs], sp2incl)
-  }
-
   if(minRecs > 1 | minSite > 1){
-    nOrig <- length(unique(inData$species))
+    # now identify species that occur on at least `minSite` sites and minRecs records
+    sp2incl <- subset(spSumm, recs >= minRecs & sites >= minSite)$species
+
+    nOrig <- nrow(spSumm)
     nExcl <- nOrig - length(sp2incl)
 
-    if(verbose) {
+    if(verbose & nExcl > 0) {
       print(paste('Note:',nExcl,'species out of', nOrig, 'have been excluded because they occur on fewer than', minSite, 'sites or have fewer than', minRecs, 'records'))
       if(length(sp2incl) > 0) {
         print(paste('We proceed to modelling with', length(sp2incl), 'species'))
@@ -133,6 +131,8 @@ formatData <- function(inData,
         stop(paste0("There are no species with enough data to model"))
       }
     }
+  } else {
+    sp2incl <- spSumm$species
   }
 
   ##################### format data with one row per visit
@@ -151,7 +151,7 @@ formatData <- function(inData,
   # create metadata object
   md <- formatMetadata(inData)
 
-  md$datastr$sp_n_Site <- data.frame(species = names(sp_n_Site), nSite = as.numeric(sp_n_Site))
+  md$datastr$spSumm <- spSumm
   md$settings <- list(sp_modelled = length(sp2incl),
                       minSite = minSite,
                       minYr = min(castDat$Year),
