@@ -93,6 +93,8 @@ formatData <- function(inData,
 
   ########################################################
   # Filter species (part 1)
+  sp2incl <- unique(inData$species)
+
   # set the minimum number of sites, as there are some species that were never observed.
   if(minSite < 1) minSite <- 1
 
@@ -102,7 +104,7 @@ formatData <- function(inData,
     sp_site <- (acast(inData, species~siteID, value.var = "year", function(x) max(x) > 0, fill = 0))
 
     sp_n_Site <- rowSums(sp_site)
-    sp2incl1 <- names(which(sp_n_Site >= minSite))
+    sp2incl <- names(which(sp_n_Site >= minSite))
   }
 
   # Filter species (part 2)
@@ -116,13 +118,12 @@ formatData <- function(inData,
       group_by(species) %>%
       count()
 
-    sp2incl2 <- temp$species[temp$n >= minRecs]
+    sp2incl <- intersect(temp$species[temp$n >= minRecs], sp2incl)
   }
 
   if(minRecs > 1 | minSite > 1){
-    sp2incl <- intersect(sp2incl1, sp2incl2)
     nOrig <- length(unique(inData$species))
-    nExcl <- nOrig - sp2incl
+    nExcl <- nOrig - length(sp2incl)
 
     if(verbose) {
       print(paste('Note:',nExcl,'species out of', nOrig, 'have been excluded because they occur on fewer than', minSite, 'sites or have fewer than', minRecs, 'records'))
