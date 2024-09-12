@@ -163,6 +163,7 @@ runModel <- function(dataConstants,
 
       # step 1 define the model code
       modelcode <- defineModel_SS(inclPhenology = inclPhenology,
+                                  ListLen = ListLen,
                                   inclStateRE = inclStateRE)
       #print("model definition read in")
 
@@ -196,6 +197,8 @@ runModel <- function(dataConstants,
           stop("invalid List Length option")
         }
       }
+      print(str(init.vals))
+      print(str(dataConstants))
       #print("initial values set")
 
       # step 2 create an operational from from NIMBLE/BUGS code
