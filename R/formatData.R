@@ -8,7 +8,7 @@
 #' @param ListLen should be included as continuous ("Cont"), categorical ("Cat") or excluded (NULL)
 #' @param minYrPerSite the minimum number of years with data for a site to be included (defaults to 2, as in sparta)
 #' @param minSite the threshold minimum number of sites for a species to be considered for modelling
-#' @param maxSite defines a limit on the number of sites in the database
+#' @param minRecs the threshold minimum number of records for a species to be considered (after applying `minSite`)
 #' @return list of two data frames
 #' @import reshape2
 #' @import magrittr
@@ -56,7 +56,8 @@ formatData <- function(inData,
                        ListLen = NULL,
                        inclPhenology = TRUE,
                        minYrPerSite = 2,
-                       minSite = 1, maxSite = 999,
+                       minSite = 1,
+                       minRecs = 1,
                        verbose = TRUE){
 
   # check that every year has data
@@ -76,46 +77,60 @@ formatData <- function(inData,
       group_by(siteID) %>%
       count()
 
-    sites_to_include <- subset(temp, n >= minYrPerSite)$siteID
+  sites_to_include <- subset(temp, n >= minYrPerSite)$siteID
 
-    if(verbose){
-      print(paste(length(unique(inData$siteID)) - length(sites_to_include),
-                "sites out of",
-                length(unique(inData$siteID)),
-                "have visits from fewer than",
-                minYrPerSite,
-                "years and are being discarded."))
-      }
+  if(verbose){
+    print(paste(length(unique(inData$siteID)) - length(sites_to_include),
+              "sites out of",
+              length(unique(inData$siteID)),
+              "have visits from fewer than",
+              minYrPerSite,
+              "years and are being discarded."))
+    }
 
     inData <- subset(inData, siteID %in% sites_to_include)
   }
-  ################################################
-
-  ### now limit the data to MaxSite whilst preserving the attributes that will be needed later.
-  if(maxSite < length(unique(inData$siteID))){
-    if(maxSite < 10) {maxSite <- 10}
-    if(verbose) print(paste("Subsetting the dataset to", maxSite,"sites. Increase or decrease this value using the `maxSite` argument."))
-    sites2incl <- sample(unique(inData$siteID), maxSite)
-    inData <- subset(inData, siteID %in% sites2incl)
-  }
 
   ########################################################
+  # Filter species (part 1)
   # set the minimum number of sites, as there are some species that were never observed.
   if(minSite < 1) minSite <- 1
 
-  # now identify species that occur on at least `minSite` sites
-  # apparent occupancy matrix across all species:site combos for all data types
-  sp_site <- (acast(inData, species~siteID, value.var = "year", function(x) max(x) > 0, fill = 0))
+  if(minSite > 1){
+    # now identify species that occur on at least `minSite` sites
+    # apparent occupancy matrix across all species:site combos for all data types
+    sp_site <- (acast(inData, species~siteID, value.var = "year", function(x) max(x) > 0, fill = 0))
 
-  sp_n_Site <- rowSums(sp_site)
-  sp2incl <- which(sp_n_Site > minSite)
-  nExcl <- length(sp_n_Site) - length(sp2incl)
-  if(verbose) {
-    print(paste('Note:',nExcl,'species out of', length(sp_n_Site), 'have been excluded because they occur on', minSite, 'sites or fewer'))
-    if(length(sp2incl) > 0) {
-      print(paste('We proceed to modelling with', length(sp2incl), 'species'))
-    } else {
-      stop(paste0("There are no species with enough sites model"))
+    sp_n_Site <- rowSums(sp_site)
+    sp2incl1 <- names(which(sp_n_Site >= minSite))
+  }
+
+  # Filter species (part 2)
+  # set the minimum number of records below which we cannot model.
+  if(minRecs < 1) minRecs <- 1
+
+  if(minRecs > 1){
+
+    temp <- inData %>%
+      distinct(species, survey, siteID, year) %>%
+      group_by(species) %>%
+      count()
+
+    sp2incl2 <- temp$species[temp$n >= minRecs]
+  }
+
+  if(minRecs > 1 | minSite > 1){
+    sp2incl <- intersect(sp2incl1, sp2incl2)
+    nOrig <- length(unique(inData$species))
+    nExcl <- nOrig - sp2incl
+
+    if(verbose) {
+      print(paste('Note:',nExcl,'species out of', nOrig, 'have been excluded because they occur on fewer than', minSite, 'sites or have fewer than', minRecs, 'records'))
+      if(length(sp2incl) > 0) {
+        print(paste('We proceed to modelling with', length(sp2incl), 'species'))
+      } else {
+        stop(paste0("There are no species with enough data to model"))
+      }
     }
   }
 
