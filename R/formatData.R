@@ -104,8 +104,9 @@ formatData <- function(inData,
     group_by(species) %>%
     count()
 
-  spSumm <- as.data.frame(cbind(spRec, spSite[,2]))
-  names(spSumm)[2:3] <- c("recs", "sites")
+  spSumm <- as.data.frame(spRec)
+  names(spSumm)[2] <- "recs"
+  spSumm$sites <- spSite[,2]
 
   ########################################################
   # Filter species (part 1)
@@ -195,8 +196,7 @@ formatData <- function(inData,
       print(with(dataConstants, paste("Formatted data contains",
                                       nvisit, "visits to",
                                       nsite, "sites in",
-                                      nyear, "years, with",
-                                      nsp, "species."
+                                      nyear, "years."
                                       )))
     }
 

@@ -169,7 +169,7 @@ runModel <- function(dataConstants,
 
       init.vals <- list(z = dataSumm$occMatrix[1,,], # value for species 1
                         lam.0 = logit(dataSumm$stats$naiveOcc[1] * 0.99), # value for species 1
-                        sd.psi = rnorm(n = 1, sd = 0.02),
+                        sd.psi = 0.5,
                         psi = rnorm(n=dataConstants$nyear, sd = 0.02),
                         mu.alpha = -1,
                         sd.alpha = 2
