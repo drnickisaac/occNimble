@@ -4,8 +4,8 @@
 #' @param minSite the threshold minimum number of sites for a species to be considered for modelling
 #' @param inData A dataset with columns "species", "siteID", "survey" and "year"
 #' @param format Either "Nimble" (default) or "spOcc"
-#' @param inclPhenology should the model account for seasonal variation?
 #' @param ListLen should be included as continuous ("Cont"), categorical ("Cat") or excluded (NULL)
+#' @param inclPhenology should the model account for seasonal variation?
 #' @param minYrPerSite the minimum number of years with data for a site to be included (defaults to 2, as in sparta)
 #' @param minSite the threshold minimum number of sites for a species to be considered for modelling
 #' @param minRecs the threshold minimum number of records for a species to be considered (after applying `minSite`)

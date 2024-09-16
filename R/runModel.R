@@ -76,8 +76,8 @@ runModel <- function(dataConstants,
                      obsData,
                      dataSumm,
                      format = "Nimble",
-                     inclPhenology = FALSE,
                      ListLen = NULL,
+                     inclPhenology = FALSE,
                      inclStateRE = FALSE,
                      multiSp = FALSE,
                      parallelize = FALSE,
@@ -129,7 +129,7 @@ runModel <- function(dataConstants,
     if(inclStateRE) modPars <- c(modPars, "sd.eta")
     if(!is.null(ListLen)){
       modPars <- c(modPars, "gamma.1")
-      if(ListLen == "cat") modPars <- c(modPars, "gamma.1")
+      if(ListLen == "cat") modPars <- c(modPars, "gamma.2")
     }
 
     if(all(is.logical(allPars))){
@@ -152,6 +152,15 @@ runModel <- function(dataConstants,
       }
     }
     print(paste("Monitoring:", params))
+
+    # if present, split the annual parameters into a different set with greater thinning
+    if(any(c("psi.fs", "alpha.0") %in% params)){
+      params2 <- intersect(params,c("psi.fs", "alpha.0"))
+      params <- setdiff(params,c("psi.fs", "alpha.0"))
+    } else {
+      params2 <- NULL
+    }
+
 
     #####################################
 
@@ -207,9 +216,12 @@ runModel <- function(dataConstants,
                            inits = init.vals)
       #print("step 2 complete")
 
+
+
       # step 3 build an MCMC object using buildMCMC(). we can add some customization here
       occMCMC <- buildMCMC(model,
                            monitors = params,
+                           monitors2 = params2,
                            useConjugacy = FALSE) # useConjugacy controls whether conjugate samplers are assigned when possible
       #print("model build complete")
 
@@ -255,6 +267,7 @@ runModel <- function(dataConstants,
                        nburnin = n.burn,
                        chain = i,
                        thin = n.thin,
+                       thin2 = 2 * n.thin, # for the annual parameters
                        reset = TRUE)
           samplesList[[i]] <- as.matrix(CoccMCMC$mvSamples)
         }
