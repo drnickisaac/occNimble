@@ -5,9 +5,9 @@
 #' @param obsData dataframe produced by formatData()
 #' @param dataSumm$stats dataframe produced by summariseData()
 #' @param format Either "Nimble" (default) or "spOcc"
+#' @param inclStateRE should there be a site-level random effect in the state model?
 #' @param ListLen should be included as continuous ("Cont"), categorical ("Cat") or excluded (NULL)
 #' @param inclPhenology should the model account for seasonal variation?
-#' @param inclStateRE should there be a site-level random effect in the state model?
 #' @param multiSp should the model be run as a multispecies model, or many single-species models?
 #' @param parallelize should the chains be run as separate processes on different cores?
 #' @param allPars Either a list of parameters to monitor or logical statement: if `TRUE` then all model parameters are monitored. If `FALSE`the just `Trend`.
@@ -76,9 +76,9 @@ runModel <- function(dataConstants,
                      obsData,
                      dataSumm,
                      format = "Nimble",
+                     inclStateRE = FALSE,
                      ListLen = NULL,
                      inclPhenology = FALSE,
-                     inclStateRE = FALSE,
                      multiSp = FALSE,
                      parallelize = FALSE,
                      allPars = FALSE,
@@ -129,7 +129,7 @@ runModel <- function(dataConstants,
     if(inclStateRE) modPars <- c(modPars, "sd.eta")
     if(!is.null(ListLen)){
       modPars <- c(modPars, "gamma.1")
-      if(ListLen == "cat") modPars <- c(modPars, "gamma.2")
+      if(ListLen == "cat") modPars <- c(modPars, "gamma.2") # this line not being triggers
     }
 
     if(all(is.logical(allPars))){
@@ -303,7 +303,7 @@ runModel <- function(dataConstants,
         }
         )
       }
-      #names(yearEff) <- dimnames(dataSumm$occMatrix)[[1]][1:nSpMod] # should be same as below
+
       names(yearEff) <- dimnames(formattedData$obsData$y)[[1]][1:nSpMod]
       attr(yearEff, "modelCode") <- model$getCode()
     }
