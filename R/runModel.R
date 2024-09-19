@@ -261,7 +261,6 @@ runModel <- function(dataConstants,
         # and now we can use $run on the compiled model object.
         samplesList <- list()
         if(mon2) samplesList2 <- list() else samplesList2 <- NULL
-        print(paste("1", str(samplesList2)))
 
         for(i in 1:n.chain){
           CoccMCMC$run(niter = n.iter,
@@ -272,12 +271,10 @@ runModel <- function(dataConstants,
                        reset = TRUE)
           samplesList[[i]] <- as.matrix(CoccMCMC$mvSamples)
           if(mon2) samplesList2[[i]] <- as.matrix(CoccMCMC$mvSamples2)
-          print(paste("2", str(samplesList2)))
 
         }
         samplesList <- coda::as.mcmc.list(lapply(samplesList, as.mcmc))
         if(mon2) samplesList2 <- coda::as.mcmc.list(lapply(samplesList2, as.mcmc))
-        print(paste("3", str(samplesList2)))
 
         return(list(fixed = samplesList, annual = samplesList2))
       }
