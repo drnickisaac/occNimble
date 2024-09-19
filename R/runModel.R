@@ -273,9 +273,12 @@ runModel <- function(dataConstants,
                        reset = TRUE)
           samplesList[[i]] <- as.matrix(CoccMCMC$mvSamples)
           if(mon2) samplesList2[[i]] <- as.matrix(CoccMCMC$mvSamples2)
-          }
+          print(paste("1", str(samplesList2))
+        }
         samplesList <- coda::as.mcmc.list(lapply(samplesList, as.mcmc))
         if(mon2) samplesList2 <- coda::as.mcmc.list(lapply(samplesList2, as.mcmc))
+        print(paste("2", str(samplesList2))
+
         return(list(fixed = samplesList, annual = samplesList2))
       }
 
