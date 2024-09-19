@@ -236,7 +236,7 @@ runModel <- function(dataConstants,
 
       single_species_model <- function(sp, spDat, dataSumm,
                                        n.iter, n.burn, n.thin, n.chain,
-                                       Cmodel, CoccMCMC){
+                                       Cmodel, CoccMCMC, mon2 = FALSE){
 
         # apparent occupancy for this species
         Z <- dataSumm$occMatrix[sp,,]
@@ -261,7 +261,8 @@ runModel <- function(dataConstants,
           }
 
         # and now we can use $run on the compiled model object.
-        samplesList <- samplesList2 <- list()
+        samplesList <- list()
+        samplesList2 <- ifelse(mon2, list(), NULL)
         for(i in 1:n.chain){
           CoccMCMC$run(niter = n.iter,
                        nburnin = n.burn,
@@ -270,11 +271,11 @@ runModel <- function(dataConstants,
                        thin2 = 2 * n.thin, # for the annual parameters
                        reset = TRUE)
           samplesList[[i]] <- as.matrix(CoccMCMC$mvSamples)
-          samplesList[[i]] <- as.matrix(CoccMCMC$mvSamples2)
+          if(mon2) samplesList2[[i]] <- as.matrix(CoccMCMC$mvSamples2)
           }
         samplesList <- coda::as.mcmc.list(lapply(samplesList, as.mcmc))
-        samplesList2 <- coda::as.mcmc.list(lapply(samplesList2, as.mcmc))
-        return(list(samplesList, samplesList2))
+        if(mon2) samplesList2 <- coda::as.mcmc.list(lapply(samplesList2, as.mcmc))
+        return(list(fixed = samplesList, annual = samplesList2))
       }
 
       ####################################################################################
