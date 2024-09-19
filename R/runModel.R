@@ -290,7 +290,8 @@ runModel <- function(dataConstants,
                                n.burn = n.burn,
                                n.thin = n.thin,
                                n.chain = n.chain,
-                               Cmodel, CoccMCMC)
+                               Cmodel, CoccMCMC,
+                               mon2 = !is.null(params2))
         },
         mc.cores = getOption("mc.cores", 7L)  #av_cores
         )
@@ -303,7 +304,8 @@ runModel <- function(dataConstants,
                                n.burn = n.burn,
                                n.thin = n.thin,
                                n.chain = n.chain,
-                               Cmodel, CoccMCMC)
+                               Cmodel, CoccMCMC,
+                               mon2 = !is.null(params2))
         }
         )
       }
