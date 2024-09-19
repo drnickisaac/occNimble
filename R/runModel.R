@@ -261,7 +261,7 @@ runModel <- function(dataConstants,
           }
 
         # and now we can use $run on the compiled model object.
-        samplesList <- list()
+        samplesList <- samplesList2 <- list()
         for(i in 1:n.chain){
           CoccMCMC$run(niter = n.iter,
                        nburnin = n.burn,
@@ -270,8 +270,11 @@ runModel <- function(dataConstants,
                        thin2 = 2 * n.thin, # for the annual parameters
                        reset = TRUE)
           samplesList[[i]] <- as.matrix(CoccMCMC$mvSamples)
-        }
+          samplesList[[i]] <- as.matrix(CoccMCMC$mvSamples2)
+          }
         samplesList <- coda::as.mcmc.list(lapply(samplesList, as.mcmc))
+        samplesList2 <- coda::as.mcmc.list(lapply(samplesList2, as.mcmc))
+        return(list(samplesList, samplesList2))
       }
 
       ####################################################################################
@@ -321,15 +324,15 @@ runModel <- function(dataConstants,
                   beta = 0)
 
     # model specification for the occupancy and detectability
-    occ.formula <- ~ as.factor(Site) + as.factor(Year)
+    occ.formula <- ~ Site + Year
     if(!is.null(ListLen)){
       if(grepl("cont", ListLen, ignore.case = TRUE)){
-        det.formula <- ~ as.factor(year) + logL
+        det.formula <- ~ year + logL
       } else if(grepl("cat", ListLen, ignore.case = TRUE)){
-        det.formula <- ~ as.factor(year) + as.factor(DT2) + as.factor(DT3)
+        det.formula <- ~ year + DT2 + DT3
       }
     } else {
-      det.formula <- ~ as.factor(year)
+      det.formula <- ~ year
     }
 
     if(inclPhenology){warning("phenology option not yet implemented")}

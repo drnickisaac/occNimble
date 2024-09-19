@@ -216,14 +216,14 @@ formatData <- function(inData,
     dataConstants <- list(
       # occupancy covariates are indexed by site and year
       occ.covs = list(
-        Year = matrix(rep(1:nyear, nsite),
-                      nsite, nyear, byrow=TRUE),
-        Site = matrix(rep(1:nsite, nyear),
-                        nsite, nyear, byrow=FALSE)
+        Year = as.factor(matrix(rep(1:nyear, nsite),
+                      nsite, nyear, byrow=TRUE)),
+        Site = as.factor(matrix(rep(1:nsite, nyear),
+                        nsite, nyear, byrow=FALSE))
       ),
       # detection covariates are indexed by site, year and replicate
       det.covs = list(
-        year = acast(bd, siteID ~ year ~ Replicate, fill = NA, value.var = "year")
+        year = as.factor(acast(bd, siteID ~ year ~ Replicate, fill = NA, value.var = "year"))
       )
     )
 
@@ -233,8 +233,8 @@ formatData <- function(inData,
       } else if(grepl("cat", ListLen, ignore.case = TRUE)){
         bd$DT2 <- as.numeric(bd$nsp %in% 2:3)
         bd$DT3 <- as.numeric(bd$nsp > 3)
-        dataConstants$det.covs$DT2 = acast(bd, siteID ~ year ~ Replicate, fill = NA, value.var = "DT2")
-        dataConstants$det.covs$DT3 = acast(bd, siteID ~ year ~ Replicate, fill = NA, value.var = "DT3")
+        dataConstants$det.covs$DT2 = as.factor(acast(bd, siteID ~ year ~ Replicate, fill = NA, value.var = "DT2"))
+        dataConstants$det.covs$DT3 = as.factor(acast(bd, siteID ~ year ~ Replicate, fill = NA, value.var = "DT3"))
       }
     }
     if(inclPhenology){
