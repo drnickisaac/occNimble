@@ -187,6 +187,7 @@ runModel <- function(dataConstants,
       if(inclPhenology){
         init.vals$beta1 <- 180
         init.vals$beta2 <- 50
+        init.vals$alpha.1 <- 1
         init.vals$alpha.0 <- rnorm(n=dataConstants$nyear, mean=0, sd=2)
       } else {
         init.vals$alpha.0 <- rnorm(n=dataConstants$nyear, mean= -2, sd=2)
