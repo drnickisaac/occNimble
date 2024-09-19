@@ -154,13 +154,10 @@ runModel <- function(dataConstants,
     print(paste("Monitoring:", params))
 
     # if present, split the annual parameters into a different set with greater thinning
+    params2 <- intersect(params,c("psi.fs", "alpha.0"))
     if(any(c("psi.fs", "alpha.0") %in% params)){
-      params2 <- intersect(params,c("psi.fs", "alpha.0"))
       params <- setdiff(params,c("psi.fs", "alpha.0"))
-    } else {
-      params2 <- NULL
     }
-
 
     #####################################
 
@@ -293,7 +290,7 @@ runModel <- function(dataConstants,
                                n.thin = n.thin,
                                n.chain = n.chain,
                                Cmodel, CoccMCMC,
-                               mon2 = !is.null(params2))
+                               mon2 = length(params2)>0)
         },
         mc.cores = getOption("mc.cores", 7L)  #av_cores
         )
@@ -307,7 +304,7 @@ runModel <- function(dataConstants,
                                n.thin = n.thin,
                                n.chain = n.chain,
                                Cmodel, CoccMCMC,
-                               mon2 = !is.null(params2))
+                               mon2 = length(params2)>0)
         }
         )
       }
